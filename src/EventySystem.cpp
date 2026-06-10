@@ -1,10 +1,13 @@
 #include "EventySystem.h"
 #include <iostream>
-#include <sstream>
 
 EventySystem::EventySystem() {
     this->nextClientId = 1;
     this->nextEventId = 1;
+    this->nextTicketId = 1;
+    this->nextNotificationId = 1;
+    this->nextRequestId = 1;
+
     this->currentClientIndex = -1;
     this->running = true;
 
@@ -43,12 +46,33 @@ int EventySystem::findEventIndexById(int eventId) const {
     return -1;
 }
 
+int EventySystem::findRequestIndexById(int requestId) const {
+    for (int i = 0; i < (int)this->requests.size(); i++) {
+        if (this->requests[i].getId() == requestId) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 Client* EventySystem::getCurrentClient() {
     if (this->currentClientIndex < 0) {
         return nullptr;
     }
 
     return &this->clients[this->currentClientIndex];
+}
+
+void EventySystem::addNotification(int receiverId, const std::string& message) {
+    Notification notification(
+        this->nextNotificationId,
+        receiverId,
+        message
+    );
+
+    this->notifications.push_back(notification);
+    this->nextNotificationId++;
 }
 
 void EventySystem::run() {
@@ -60,8 +84,7 @@ void EventySystem::run() {
 
         if (this->currentClientIndex == -1) {
             std::cout << "guest> ";
-        }
-        else {
+        } else {
             std::cout << this->clients[this->currentClientIndex].getUsername() << "> ";
         }
 
@@ -82,51 +105,42 @@ void EventySystem::handleCommand(const std::string& line) {
 
     if (command == "help") {
         this->printHelp();
-    }
-    else if (command == "exit") {
+    } else if (command == "exit") {
         this->running = false;
         std::cout << "Goodbye from Eventy." << std::endl;
-    }
-    else if (command == "register") {
+    } else if (command == "register") {
         this->registerClient(input);
-    }
-    else if (command == "login") {
+    } else if (command == "login") {
         this->login(input);
-    }
-    else if (command == "logout") {
+    } else if (command == "logout") {
         this->logout();
-    }
-    else if (command == "wallet") {
+    } else if (command == "wallet") {
         this->showWallet();
-    }
-    else if (command == "add-balance") {
+    } else if (command == "add-balance") {
         this->addBalance(input);
-    }
-    else if (command == "create-ticketed-event") {
+    } else if (command == "create-ticketed-event") {
         this->createTicketedEvent(input);
-    }
-    else if (command == "create-volunteer-event") {
+    } else if (command == "create-volunteer-event") {
         this->createVolunteerEvent(input);
-    }
-    else if (command == "list-upcoming-events") {
+    } else if (command == "list-upcoming-events") {
         this->listUpcomingEvents();
-    }
-    else if (command == "list-my-events") {
+    } else if (command == "list-my-events") {
         this->listMyEvents();
-    }
-    else if (command == "event-info") {
+    } else if (command == "event-info") {
         this->showEventInfo(input);
-    }
-    else if (command == "list-requests") {
+    } else if (command == "buy-ticket") {
+        this->buyTicket(input);
+    } else if (command == "list-tickets") {
+        this->listTickets();
+    } else if (command == "list-notifications") {
+        this->listNotifications();
+    } else if (command == "list-requests") {
         this->listRequests();
-    }
-    else if (command == "approve-request") {
+    } else if (command == "approve-request") {
         this->approveRequest(input);
-    }
-    else if (command == "reject-request") {
+    } else if (command == "reject-request") {
         this->rejectRequest(input);
-    }
-    else {
+    } else {
         std::cout << "Unknown command. Type help." << std::endl;
     }
 }
@@ -148,18 +162,20 @@ void EventySystem::printHelp() const {
     std::cout << "  logout" << std::endl;
     std::cout << "  list-upcoming-events" << std::endl;
     std::cout << "  event-info <event_id>" << std::endl;
+    std::cout << "  list-notifications" << std::endl;
 
     if (client.isAdmin()) {
         std::cout << "  list-requests" << std::endl;
-        std::cout << "  approve-request <event_id>" << std::endl;
-        std::cout << "  reject-request <event_id>" << std::endl;
-    }
-    else {
+        std::cout << "  approve-request <request_id>" << std::endl;
+        std::cout << "  reject-request <request_id> <reason>" << std::endl;
+    } else {
         std::cout << "  wallet" << std::endl;
         std::cout << "  add-balance <amount>" << std::endl;
         std::cout << "  create-ticketed-event <title> <date> <address> <price> <capacity>" << std::endl;
         std::cout << "  create-volunteer-event <title> <date> <address> <description>" << std::endl;
         std::cout << "  list-my-events" << std::endl;
+        std::cout << "  buy-ticket <event_id> <count>" << std::endl;
+        std::cout << "  list-tickets" << std::endl;
     }
 
     std::cout << "  exit" << std::endl;
@@ -180,6 +196,7 @@ void EventySystem::registerClient(std::stringstream& input) {
         std::cout << "Usage: register <username> <password>" << std::endl;
         return;
     }
+
     if (this->findClientIndexByUsername(username) != -1) {
         std::cout << "Username already exists." << std::endl;
         return;
@@ -253,6 +270,7 @@ void EventySystem::addBalance(std::stringstream& input) {
         std::cout << "Login first." << std::endl;
         return;
     }
+
     if (client->isAdmin()) {
         std::cout << "Admin cannot add balance." << std::endl;
         return;
@@ -278,6 +296,7 @@ void EventySystem::createTicketedEvent(std::stringstream& input) {
         std::cout << "Login first." << std::endl;
         return;
     }
+
     if (client->isAdmin()) {
         std::cout << "Admin cannot create events." << std::endl;
         return;
@@ -308,9 +327,20 @@ void EventySystem::createTicketedEvent(std::stringstream& input) {
     event.setTicketInfo(price, capacity);
 
     this->events.push_back(event);
-    this->nextEventId++;
 
-    std::cout << "Ticketed event created. Waiting for admin approval." << std::endl;
+    Request request(
+        this->nextRequestId,
+        event.getId(),
+        client->getId(),
+        event.getTitle()
+    );
+
+    this->requests.push_back(request);
+
+    this->nextEventId++;
+    this->nextRequestId++;
+
+    std::cout << "Ticketed event created. Request sent to admin." << std::endl;
 }
 
 void EventySystem::createVolunteerEvent(std::stringstream& input) {
@@ -351,9 +381,20 @@ void EventySystem::createVolunteerEvent(std::stringstream& input) {
     event.setVolunteerDescription(description);
 
     this->events.push_back(event);
-    this->nextEventId++;
 
-    std::cout << "Volunteer event created. Waiting for admin approval." << std::endl;
+    Request request(
+        this->nextRequestId,
+        event.getId(),
+        client->getId(),
+        event.getTitle()
+    );
+
+    this->requests.push_back(request);
+
+    this->nextEventId++;
+    this->nextRequestId++;
+
+    std::cout << "Volunteer event created. Request sent to admin." << std::endl;
 }
 
 void EventySystem::listUpcomingEvents() const {
@@ -426,6 +467,23 @@ void EventySystem::showEventInfo(std::stringstream& input) const {
 
     const Event& event = this->events[index];
 
+    if (!event.isPublished()) {
+        bool allowed = false;
+
+        if (this->currentClientIndex != -1) {
+            const Client& currentClient = this->clients[this->currentClientIndex];
+
+            if (currentClient.isAdmin() || currentClient.getId() == event.getCreatorId()) {
+                allowed = true;
+            }
+        }
+
+        if (!allowed) {
+            std::cout << "Event is not public." << std::endl;
+            return;
+        }
+    }
+
     std::cout << "Id: " << event.getId() << std::endl;
     std::cout << "Title: " << event.getTitle() << std::endl;
     std::cout << "Date: " << event.getDate() << std::endl;
@@ -437,9 +495,135 @@ void EventySystem::showEventInfo(std::stringstream& input) const {
         std::cout << "Ticket price: " << event.getTicketPrice() << std::endl;
         std::cout << "Capacity: " << event.getCapacity() << std::endl;
         std::cout << "Available tickets: " << event.getAvailableTickets() << std::endl;
-    }
-    else {
+    } else {
         std::cout << "Volunteer description: " << event.getVolunteerDescription() << std::endl;
+    }
+}
+
+void EventySystem::buyTicket(std::stringstream& input) {
+    Client* client = this->getCurrentClient();
+
+    if (client == nullptr) {
+        std::cout << "Login first." << std::endl;
+        return;
+    }
+
+    if (client->isAdmin()) {
+        std::cout << "Admin cannot buy tickets." << std::endl;
+        return;
+    }
+
+    int eventId;
+    int count;
+
+    input >> eventId >> count;
+
+    if (!input || count <= 0) {
+        std::cout << "Usage: buy-ticket <event_id> <count>" << std::endl;
+        return;
+    }
+
+    int eventIndex = this->findEventIndexById(eventId);
+
+    if (eventIndex == -1) {
+        std::cout << "Event not found." << std::endl;
+        return;
+    }
+
+    Event& event = this->events[eventIndex];
+
+    if (!event.isTicketed()) {
+        std::cout << "This event does not sell tickets." << std::endl;
+        return;
+    }
+
+    if (!event.isPublished()) {
+        std::cout << "This event is not published." << std::endl;
+        return;
+    }
+
+    if (!event.canSellTickets(count)) {
+        std::cout << "Not enough available tickets." << std::endl;
+        return;
+    }
+
+    double totalPrice = event.getTicketPrice() * count;
+
+    if (!client->withdraw(totalPrice)) {
+        std::cout << "Not enough balance." << std::endl;
+        return;
+    }
+
+    event.sellTickets(count);
+
+    Ticket ticket(
+        this->nextTicketId,
+        client->getId(),
+        event.getId(),
+        event.getTitle(),
+        count,
+        totalPrice
+    );
+
+    this->tickets.push_back(ticket);
+    this->nextTicketId++;
+
+    this->addNotification(
+        client->getId(),
+        "You bought tickets for event: " + event.getTitle()
+    );
+
+    std::cout << "Tickets bought successfully." << std::endl;
+}
+
+void EventySystem::listTickets() const {
+    if (this->currentClientIndex == -1) {
+        std::cout << "Login first." << std::endl;
+        return;
+    }
+
+    const Client& client = this->clients[this->currentClientIndex];
+
+    if (client.isAdmin()) {
+        std::cout << "Admin does not have tickets." << std::endl;
+        return;
+    }
+
+    bool found = false;
+
+    for (const Ticket& ticket : this->tickets) {
+        if (ticket.getOwnerId() == client.getId()) {
+            ticket.print();
+            std::cout << std::endl;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        std::cout << "You do not have tickets." << std::endl;
+    }
+}
+
+void EventySystem::listNotifications() {
+    if (this->currentClientIndex == -1) {
+        std::cout << "Login first." << std::endl;
+        return;
+    }
+
+    Client& client = this->clients[this->currentClientIndex];
+
+    bool found = false;
+
+    for (Notification& notification : this->notifications) {
+        if (notification.getReceiverId() == client.getId()) {
+            notification.print();
+            notification.markAsRead();
+            found = true;
+        }
+    }
+
+    if (!found) {
+        std::cout << "No notifications." << std::endl;
     }
 }
 
@@ -451,12 +635,10 @@ void EventySystem::listRequests() const {
 
     bool found = false;
 
-    for (const Event& event : this->events) {
-        if (event.getStatus() == EventStatus::Pending) {
-            std::cout << "Request for event [" << event.getId() << "] "
-                      << event.getTitle() << " by client id "
-                      << event.getCreatorId() << std::endl;
-
+    for (const Request& request : this->requests) {
+        if (request.isPending()) {
+            request.print();
+            std::cout << std::endl;
             found = true;
         }
     }
@@ -472,28 +654,44 @@ void EventySystem::approveRequest(std::stringstream& input) {
         return;
     }
 
-    int eventId;
-    input >> eventId;
+    int requestId;
+    input >> requestId;
 
     if (!input) {
-        std::cout << "Usage: approve-request <event_id>" << std::endl;
+        std::cout << "Usage: approve-request <request_id>" << std::endl;
         return;
     }
 
-    int index = this->findEventIndexById(eventId);
+    int requestIndex = this->findRequestIndexById(requestId);
 
-    if (index == -1) {
-        std::cout << "Event request not found." << std::endl;
+    if (requestIndex == -1) {
+        std::cout << "Request not found." << std::endl;
         return;
     }
-    if (this->events[index].getStatus() != EventStatus::Pending) {
+
+    Request& request = this->requests[requestIndex];
+
+    if (!request.isPending()) {
         std::cout << "This request is not pending." << std::endl;
         return;
     }
 
-    this->events[index].publish();
+    int eventIndex = this->findEventIndexById(request.getEventId());
 
-    std::cout << "Event approved and published." << std::endl;
+    if (eventIndex == -1) {
+        std::cout << "Connected event was not found." << std::endl;
+        return;
+    }
+
+    this->events[eventIndex].publish();
+    request.approve();
+
+    this->addNotification(
+        request.getCreatorId(),
+        "Your event was approved: " + request.getEventTitle()
+    );
+
+    std::cout << "Request approved. Event is now published." << std::endl;
 }
 
 void EventySystem::rejectRequest(std::stringstream& input) {
@@ -502,25 +700,50 @@ void EventySystem::rejectRequest(std::stringstream& input) {
         return;
     }
 
-    int eventId;
-    input >> eventId;
+    int requestId;
+    input >> requestId;
 
     if (!input) {
-        std::cout << "Usage: reject-request <event_id>" << std::endl;
+        std::cout << "Usage: reject-request <request_id> <reason>" << std::endl;
         return;
     }
 
-    int index = this->findEventIndexById(eventId);
+    std::string reason;
+    std::getline(input, reason);
 
-    if (index == -1) {
-        std::cout << "Event request not found." << std::endl;
+    if (reason.empty()) {
+        std::cout << "Usage: reject-request <request_id> <reason>" << std::endl;
         return;
     }
-    if (this->events[index].getStatus() != EventStatus::Pending) {
+
+    int requestIndex = this->findRequestIndexById(requestId);
+
+    if (requestIndex == -1) {
+        std::cout << "Request not found." << std::endl;
+        return;
+    }
+
+    Request& request = this->requests[requestIndex];
+
+    if (!request.isPending()) {
         std::cout << "This request is not pending." << std::endl;
         return;
     }
 
-    this->events[index].cancel();
-    std::cout << "Event request rejected." << std::endl;
+    int eventIndex = this->findEventIndexById(request.getEventId());
+
+    if (eventIndex == -1) {
+        std::cout << "Connected event was not found." << std::endl;
+        return;
+    }
+
+    this->events[eventIndex].cancel();
+    request.reject(reason);
+
+    this->addNotification(
+        request.getCreatorId(),
+        "Your event was rejected: " + request.getEventTitle() + ". Reason:" + reason
+    );
+
+    std::cout << "Request rejected." << std::endl;
 }
