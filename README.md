@@ -529,9 +529,14 @@ Eventy/
 ├── data/
 │   └── .gitkeep
 │
-├── README.md
+├── docs/
+│   ├── commands.md
+│   └── demo-flow.md
+│
+├── .gitattributes
+├── .gitignore
 ├── Makefile
-└── .gitignore
+└── README.md
 ```
 
 ---
