@@ -3,64 +3,72 @@
 
 Request::Request() {
     this->id = 0;
-    this->eventId = 0;
-    this->creatorId = 0;
-    this->eventTitle = "";
+    this->type = RequestType::PublishEvent;
     this->status = RequestStatus::Pending;
-    this->rejectReason = "";
+    this->requesterId = 0;
+    this->eventId = 0;
+    this->text = "";
+    this->reason = "";
 }
 
-Request::Request(
-    int id,
-    int eventId,
-    int creatorId,
-    const std::string& eventTitle
-) {
+Request::Request(int id, RequestType type, int requesterId, int eventId, const std::string& text) {
     this->id = id;
-    this->eventId = eventId;
-    this->creatorId = creatorId;
-    this->eventTitle = eventTitle;
+    this->type = type;
     this->status = RequestStatus::Pending;
-    this->rejectReason = "";
+    this->requesterId = requesterId;
+    this->eventId = eventId;
+    this->text = text;
+    this->reason = "";
+}
+
+Request::Request(int id, RequestType type, RequestStatus status, int requesterId, int eventId, const std::string& text, const std::string& reason) {
+    this->id = id;
+    this->type = type;
+    this->status = status;
+    this->requesterId = requesterId;
+    this->eventId = eventId;
+    this->text = text;
+    this->reason = reason;
 }
 
 int Request::getId() const {
     return this->id;
 }
 
-int Request::getEventId() const {
-    return this->eventId;
-}
-
-int Request::getCreatorId() const {
-    return this->creatorId;
-}
-
-std::string Request::getEventTitle() const {
-    return this->eventTitle;
+RequestType Request::getType() const {
+    return this->type;
 }
 
 RequestStatus Request::getStatus() const {
     return this->status;
 }
 
-std::string Request::getStatusAsText() const {
-    if (this->status == RequestStatus::Pending) {
-        return "Pending";
-    }
-    if (this->status == RequestStatus::Approved) {
-        return "Approved";
-    }
-
-    return "Rejected";
+int Request::getRequesterId() const {
+    return this->requesterId;
 }
 
-std::string Request::getRejectReason() const {
-    return this->rejectReason;
+int Request::getEventId() const {
+    return this->eventId;
+}
+
+const std::string& Request::getText() const {
+    return this->text;
+}
+
+const std::string& Request::getReason() const {
+    return this->reason;
 }
 
 bool Request::isPending() const {
     return this->status == RequestStatus::Pending;
+}
+
+bool Request::isPublishRequest() const {
+    return this->type == RequestType::PublishEvent;
+}
+
+bool Request::isVolunteerApplication() const {
+    return this->type == RequestType::VolunteerApplication;
 }
 
 void Request::approve() {
@@ -72,18 +80,32 @@ void Request::approve() {
 void Request::reject(const std::string& reason) {
     if (this->status == RequestStatus::Pending) {
         this->status = RequestStatus::Rejected;
-        this->rejectReason = reason;
+        this->reason = reason;
     }
 }
 
 void Request::print() const {
     std::cout << "Request #" << this->id << std::endl;
+    std::cout << "Type: " << toString(this->type) << std::endl;
+    std::cout << "Status: " << toString(this->status) << std::endl;
+    std::cout << "Requester id: " << this->requesterId << std::endl;
     std::cout << "Event id: " << this->eventId << std::endl;
-    std::cout << "Event title: " << this->eventTitle << std::endl;
-    std::cout << "Creator id: " << this->creatorId << std::endl;
-    std::cout << "Status: " << this->getStatusAsText() << std::endl;
+    std::cout << "Text: " << this->text << std::endl;
 
-    if (this->status == RequestStatus::Rejected) {
-        std::cout << "Reason: " << this->rejectReason << std::endl;
+    if (!this->reason.empty()) {
+        std::cout << "Reason: " << this->reason << std::endl;
     }
+}
+
+std::vector<std::string> Request::toRecord() const {
+    return {
+        "REQUEST",
+        std::to_string(this->id),
+        toString(this->type),
+        toString(this->status),
+        std::to_string(this->requesterId),
+        std::to_string(this->eventId),
+        this->text,
+        this->reason
+    };
 }
