@@ -2,67 +2,41 @@
 #define EVENT_H
 
 #include <string>
+#include <vector>
 #include "Enums.h"
 
 class Event {
-private:
+protected:
     int id;
     std::string title;
     std::string date;
     std::string address;
     int creatorId;
-
-    EventType type;
     EventStatus status;
-
-    double ticketPrice;
-    int capacity;
-    int soldTickets;
-
-    std::string volunteerDescription;
 
 public:
     Event();
-
-    Event(
-        int id,
-        const std::string& title,
-        const std::string& date,
-        const std::string& address,
-        int creatorId,
-        EventType type
-    );
+    Event(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, EventStatus status = EventStatus::Pending);
+    virtual ~Event() = default;
 
     int getId() const;
-    std::string getTitle() const;
-    std::string getDate() const;
-    std::string getAddress() const;
+    const std::string& getTitle() const;
+    const std::string& getDate() const;
+    const std::string& getAddress() const;
     int getCreatorId() const;
-
-    EventType getType() const;
     EventStatus getStatus() const;
 
-    std::string getTypeAsText() const;
-    std::string getStatusAsText() const;
+    bool isPending() const;
+    bool isPublished() const;
+    bool isCancelled() const;
 
     void publish();
     void cancel();
 
-    bool isPublished() const;
-    bool isTicketed() const;
-    bool isVolunteer() const;
-
-    void setTicketInfo(double price, int capacity);
-    double getTicketPrice() const;
-    int getCapacity() const;
-    int getSoldTickets() const;
-    int getAvailableTickets() const;
-
-    bool canSellTickets(int count) const;
-    bool sellTickets(int count);
-
-    void setVolunteerDescription(const std::string& description);
-    std::string getVolunteerDescription() const;
+    virtual EventType getType() const = 0;
+    virtual void printInfo() const = 0;
+    virtual void printShort() const;
+    virtual std::vector<std::string> toRecord() const = 0;
 };
 
 #endif
