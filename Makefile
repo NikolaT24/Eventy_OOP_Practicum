@@ -2,7 +2,8 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -pedantic -Iinclude
 
 SRC = src/main.cpp \
-      src/Client.cpp
+      src/Client.cpp \
+      src/Event.cpp
 
 TARGET = eventy
 
