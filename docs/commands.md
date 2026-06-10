@@ -1,4 +1,4 @@
-# 🪄 Eventy CLI Commands
+# 🛠️ Eventy CLI Commands
 
 Този файл описва основните команди в **Eventy** и режимите, в които могат да се използват.
 
