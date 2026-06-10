@@ -2,6 +2,7 @@
 #define CLIENT_H
 
 #include <string>
+#include <vector>
 #include "Enums.h"
 
 class Client {
@@ -14,23 +15,20 @@ private:
 
 public:
     Client();
-    Client(
-        int id,
-        const std::string& username,
-        const std::string& password,
-        UserRole role = UserRole::Client
-    );
+    Client(int id, const std::string& username, const std::string& password, UserRole role = UserRole::Client);
+    Client(int id, const std::string& username, const std::string& password, double balance, UserRole role);
 
     int getId() const;
-    std::string getUsername() const;
+    const std::string& getUsername() const;
     bool checkPassword(const std::string& password) const;
-
     double getBalance() const;
+    UserRole getRole() const;
+
+    bool isAdmin() const;
     void addBalance(double amount);
     bool withdraw(double amount);
 
-    UserRole getRole() const;
-    bool isAdmin() const;
+    std::vector<std::string> toRecord() const;
 };
 
 #endif
