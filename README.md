@@ -566,7 +566,7 @@ File Storage
 <p align="center">
   <b>Eventy</b>
   <br>
-  <i>Where events enter the terminal and leave as organized reality.</i> 🪄
+  <i>Where events enter the terminal and leave as organized reality.</i>
 </p>
 
 <p align="center">
