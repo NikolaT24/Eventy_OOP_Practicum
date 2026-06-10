@@ -1,72 +1,81 @@
 #ifndef EVENTY_SYSTEM_H
 #define EVENTY_SYSTEM_H
 
-#include <vector>
-#include <string>
-#include <sstream>
-
-#include "Client.h"
-#include "Event.h"
-#include "Ticket.h"
-#include "Notification.h"
-#include "Request.h"
+#include "AppState.h"
+#include "StorageService.h"
+#include "CommandParser.h"
 
 class EventySystem {
 private:
-    std::vector<Client> clients;
-    std::vector<Event> events;
-    std::vector<Ticket> tickets;
-    std::vector<Notification> notifications;
-    std::vector<Request> requests;
-
-    int nextClientId;
-    int nextEventId;
-    int nextTicketId;
-    int nextNotificationId;
-    int nextRequestId;
-
-    int currentClientIndex;
+    AppState state;
+    StorageService storage;
+    int currentUserId;
+    int managedEventId;
     bool running;
 
-    void initializeAdmin();
+    Client* currentUser();
+    const Client* currentUser() const;
+    Event* managedEvent();
+    const Event* managedEvent() const;
 
-    int findClientIndexByUsername(const std::string& username) const;
-    int findEventIndexById(int eventId) const;
-    int findRequestIndexById(int requestId) const;
+    bool isLoggedIn() const;
+    bool isAdmin() const;
+    bool isClient() const;
 
-    Client* getCurrentClient();
+    void handleCommand(const ParsedCommand& command);
+    void handleGuestCommand(const ParsedCommand& command);
+    void handleAdminCommand(const ParsedCommand& command);
+    void handleClientCommand(const ParsedCommand& command);
+    void handleEventManagementCommand(const ParsedCommand& command);
 
-    void addNotification(int receiverId, const std::string& message);
+    void printGuestHelp() const;
+    void printClientHelp() const;
+    void printAdminHelp() const;
+    void printEventManagementHelp() const;
 
-    void handleCommand(const std::string& line);
-    void printHelp() const;
-
-    void registerClient(std::stringstream& input);
-    void login(std::stringstream& input);
+    void registerClient(const std::vector<std::string>& args);
+    void login(const std::vector<std::string>& args);
     void logout();
+    void exitApplication();
 
     void showWallet() const;
-    void addBalance(std::stringstream& input);
+    void addBalance(const std::vector<std::string>& args);
 
-    void createTicketedEvent(std::stringstream& input);
-    void createVolunteerEvent(std::stringstream& input);
+    void createTicketedEvent(const std::vector<std::string>& args);
+    void createSeatedEvent(const std::vector<std::string>& args);
+    void createVolunteerEvent(const std::vector<std::string>& args);
 
     void listUpcomingEvents() const;
     void listMyEvents() const;
-    void showEventInfo(std::stringstream& input) const;
+    void showEventInfo(const std::vector<std::string>& args) const;
+    void showCurrentEventInfo() const;
+    void showSeating(const std::vector<std::string>& args) const;
 
-    void buyTicket(std::stringstream& input);
+    void buyTicket(const std::vector<std::string>& args);
     void listTickets() const;
+    void listHistory() const;
 
+    void submitVolunteerApplication(const std::vector<std::string>& args);
     void listNotifications();
 
-    void listRequests() const;
-    void approveRequest(std::stringstream& input);
-    void rejectRequest(std::stringstream& input);
+    void enterEvent(const std::vector<std::string>& args);
+    void exitEvent();
+    void cancelCurrentEvent(const std::vector<std::string>& args);
+    void listVolunteerApplications() const;
+    void approveVolunteerApplication(const std::vector<std::string>& args);
+    void rejectVolunteerApplication(const std::vector<std::string>& args);
+    void closeVolunteerApplications();
+    void listParticipants() const;
+
+    void listPublishRequests() const;
+    void approvePublishRequest(const std::vector<std::string>& args);
+    void rejectPublishRequest(const std::vector<std::string>& args);
+
+    bool hasActiveVolunteerApplication(int userId, int eventId) const;
+    void refundTicketsForCancelledEvent(int eventId, const std::string& reason);
 
 public:
     EventySystem();
-
     void run();
 };
 
