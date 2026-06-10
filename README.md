@@ -35,7 +35,7 @@
 - [🏛️ Видове събития](#️-видове-събития)
 - [⚙️ Функционалности](#️-функционалности)
 - [🧬 Основни абстракции](#-основни-абстракции)
-- [🪄 CLI команди](#-cli-команди)
+- [🛠️ CLI команди](#-cli-команди)
 - [🔔 Известия](#-известия)
 - [💾 Файлово съхранение](#-файлово-съхранение)
 - [🧪 Валидация](#-валидация)
@@ -275,7 +275,7 @@ Notification
 
 ---
 
-# 🪄 CLI команди
+# 🛠️ CLI команди
 
 ## 👻 Guest команди
 
@@ -674,7 +674,7 @@ File Storage
 <p align="center">
   <b>Eventy</b>
   <br>
-  <i>Where events enter the terminal and leave as organized reality.</i> 🪄
+  <i>Where events enter the terminal and leave as organized reality.</i>
 </p>
 
 <p align="center">
