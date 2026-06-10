@@ -1,0 +1,12 @@
+eventy
+eventy.exe
+*.o
+*.out
+*.exe
+
+data/*.db
+!data/.gitkeep
+
+.vscode/
+.idea/
+.DS_Store
