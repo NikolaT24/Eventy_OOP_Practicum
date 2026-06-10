@@ -2,43 +2,40 @@
 #define REQUEST_H
 
 #include <string>
+#include <vector>
 #include "Enums.h"
 
 class Request {
 private:
     int id;
-    int eventId;
-    int creatorId;
-    std::string eventTitle;
+    RequestType type;
     RequestStatus status;
-    std::string rejectReason;
+    int requesterId;
+    int eventId;
+    std::string text;
+    std::string reason;
 
 public:
     Request();
-
-    Request(
-        int id,
-        int eventId,
-        int creatorId,
-        const std::string& eventTitle
-    );
+    Request(int id, RequestType type, int requesterId, int eventId, const std::string& text);
+    Request(int id, RequestType type, RequestStatus status, int requesterId, int eventId, const std::string& text, const std::string& reason);
 
     int getId() const;
-    int getEventId() const;
-    int getCreatorId() const;
-    std::string getEventTitle() const;
-
+    RequestType getType() const;
     RequestStatus getStatus() const;
-    std::string getStatusAsText() const;
-
-    std::string getRejectReason() const;
+    int getRequesterId() const;
+    int getEventId() const;
+    const std::string& getText() const;
+    const std::string& getReason() const;
 
     bool isPending() const;
+    bool isPublishRequest() const;
+    bool isVolunteerApplication() const;
 
     void approve();
     void reject(const std::string& reason);
-
     void print() const;
+    std::vector<std::string> toRecord() const;
 };
 
 #endif
