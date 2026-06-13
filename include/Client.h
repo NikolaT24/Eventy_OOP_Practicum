@@ -1,34 +1,40 @@
-#ifndef CLIENT_H
-#define CLIENT_H
+#pragma once
 
-#include <string>
+#include <memory>
 #include <vector>
-#include "Enums.h"
+#include "User.h"
 
-class Client {
+class Client final : public User {
 private:
-    int id;
-    std::string username;
-    std::string password;
     double balance;
-    UserRole role;
+    std::vector<int> ticketIds;
+    std::vector<int> historyEventIds;
+    std::vector<int> createdEventIds;
+
+    static void addUnique(std::vector<int>& values, int value);
 
 public:
-    Client();
-    Client(int id, const std::string& username, const std::string& password, UserRole role = UserRole::Client);
-    Client(int id, const std::string& username, const std::string& password, double balance, UserRole role);
+    Client(int id, std::string username, std::string password,
+           double balance = 0.0,
+           std::vector<int> ticketIds = {},
+           std::vector<int> historyEventIds = {},
+           std::vector<int> createdEventIds = {},
+           std::vector<Notification> notifications = {});
 
-    int getId() const;
-    const std::string& getUsername() const;
-    bool checkPassword(const std::string& password) const;
+    UserRole getRole() const override;
+    std::unique_ptr<User> clone() const override;
+
     double getBalance() const;
-    UserRole getRole() const;
+    const std::vector<int>& getTicketIds() const;
+    const std::vector<int>& getHistoryEventIds() const;
+    const std::vector<int>& getCreatedEventIds() const;
 
-    bool isAdmin() const;
     void addBalance(double amount);
-    bool withdraw(double amount);
+    void charge(double amount);
+    void refund(double amount);
 
-    std::vector<std::string> toRecord() const;
+    void addTicket(int ticketId);
+    void removeTicket(int ticketId);
+    void addHistoryEvent(int eventId);
+    void addCreatedEvent(int eventId);
 };
-
-#endif
