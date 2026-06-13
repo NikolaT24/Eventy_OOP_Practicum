@@ -1,75 +1,84 @@
 #include "Event.h"
-#include <iostream>
+#include "EventyException.h"
+#include "Utils.h"
 
-Event::Event() {
-    this->id = 0;
-    this->title = "";
-    this->date = "";
-    this->address = "";
-    this->creatorId = 0;
-    this->status = EventStatus::Pending;
-}
+Event::Event(int id, std::string title, std::string date, std::string address,
+             int creatorId, EventStatus status, std::string cancellationReason)
+    : id(id),
+      title(std::move(title)),
+      date(std::move(date)),
+      address(std::move(address)),
+      creatorId(creatorId),
+      status(status),
+      cancellationReason(std::move(cancellationReason)) {
+    if (id <= 0 || creatorId <= 0)
+        throw ValidationException("Event and creator ids must be positive.");
 
-Event::Event(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, EventStatus status) {
-    this->id = id;
-    this->title = title;
-    this->date = date;
-    this->address = address;
-    this->creatorId = creatorId;
-    this->status = status;
+    if (this->title.empty() || this->address.empty() || !utils::isValidDate(this->date))
+        throw ValidationException("Event title, date, or address is invalid.");
 }
 
 int Event::getId() const {
-    return this->id;
+    return id;
 }
 
 const std::string& Event::getTitle() const {
-    return this->title;
+    return title;
 }
 
 const std::string& Event::getDate() const {
-    return this->date;
+    return date;
 }
 
 const std::string& Event::getAddress() const {
-    return this->address;
+    return address;
 }
 
 int Event::getCreatorId() const {
-    return this->creatorId;
+    return creatorId;
 }
 
 EventStatus Event::getStatus() const {
-    return this->status;
+    return status;
+}
+
+const std::string& Event::getCancellationReason() const {
+    return cancellationReason;
 }
 
 bool Event::isPending() const {
-    return this->status == EventStatus::Pending;
+    return status == EventStatus::Pending;
 }
 
 bool Event::isPublished() const {
-    return this->status == EventStatus::Published;
+    return status == EventStatus::Published;
 }
 
 bool Event::isCancelled() const {
-    return this->status == EventStatus::Cancelled;
+    return status == EventStatus::Cancelled;
 }
 
 void Event::publish() {
-    if (this->status == EventStatus::Pending) {
-        this->status = EventStatus::Published;
-    }
+    if (!isPending())
+        throw InvalidStateException("Only a pending event can be published.");
+
+    status = EventStatus::Published;
 }
 
-void Event::cancel() {
-    this->status = EventStatus::Cancelled;
+void Event::cancel(const std::string& reason) {
+    if (isCancelled())
+        throw InvalidStateException("The event is already cancelled.");
+
+    if (utils::trim(reason).empty())
+        throw ValidationException("A cancellation reason is required.");
+
+    status = EventStatus::Cancelled;
+    cancellationReason = utils::trim(reason);
 }
 
-void Event::printShort() const {
-    std::cout << "[" << this->id << "] "
-              << this->title << " | "
-              << this->date << " | "
-              << this->address << " | "
-              << toString(this->getType()) << " | "
-              << toString(this->status) << std::endl;
+void Event::printSummary(std::ostream& output) const {
+    output << '[' << id << "] " << title
+           << " | " << date
+           << " | " << address
+           << " | " << toString(status);
 }
