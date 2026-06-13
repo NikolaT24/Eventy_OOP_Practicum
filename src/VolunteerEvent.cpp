@@ -1,94 +1,63 @@
 #include "VolunteerEvent.h"
-#include "StringUtils.h"
-#include <iostream>
+#include <algorithm>
+#include "EventVisitor.h"
+#include "EventyException.h"
+#include "Utils.h"
 
-VolunteerEvent::VolunteerEvent() : Event() {
-    this->description = "";
-    this->applicationsOpen = true;
-}
-
-VolunteerEvent::VolunteerEvent(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, const std::string& description)
-    : Event(id, title, date, address, creatorId, EventStatus::Pending) {
-    this->description = description;
-    this->applicationsOpen = true;
-}
-
-VolunteerEvent::VolunteerEvent(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, EventStatus status, const std::string& description, bool applicationsOpen, const std::vector<int>& participantIds)
-    : Event(id, title, date, address, creatorId, status) {
-    this->description = description;
-    this->applicationsOpen = applicationsOpen;
-    this->participantIds = participantIds;
-}
-
-EventType VolunteerEvent::getType() const {
-    return EventType::Volunteer;
+VolunteerEvent::VolunteerEvent(int id, std::string title, std::string date, std::string address,
+                               int creatorId, std::string description,
+                               EventStatus status, bool applicationsOpen,
+                               std::vector<int> participantIds,
+                               std::string cancellationReason)
+    : Event(id, std::move(title), std::move(date), std::move(address), creatorId,
+            status, std::move(cancellationReason)),
+      description(std::move(description)),
+      applicationsOpen(applicationsOpen),
+      participantIds(std::move(participantIds)) {
+    if (utils::trim(this->description).empty())
+        throw ValidationException("Volunteer activity description is required.");
 }
 
 const std::string& VolunteerEvent::getDescription() const {
-    return this->description;
+    return description;
 }
 
 bool VolunteerEvent::areApplicationsOpen() const {
-    return this->applicationsOpen;
+    return applicationsOpen;
 }
 
 const std::vector<int>& VolunteerEvent::getParticipantIds() const {
-    return this->participantIds;
+    return participantIds;
 }
 
 bool VolunteerEvent::hasParticipant(int clientId) const {
-    for (int participantId : this->participantIds) {
-        if (participantId == clientId) {
-            return true;
-        }
-    }
-
-    return false;
+    return std::find(participantIds.begin(), participantIds.end(), clientId) != participantIds.end();
 }
 
-bool VolunteerEvent::addParticipant(int clientId) {
-    if (this->hasParticipant(clientId)) {
-        return false;
-    }
+void VolunteerEvent::addParticipant(int clientId) {
+    if (!isPublished() || isCancelled())
+        throw InvalidStateException("Volunteers can be approved only for a published event.");
 
-    this->participantIds.push_back(clientId);
-    return true;
+    if (hasParticipant(clientId))
+        throw InvalidStateException("The client is already a participant.");
+
+    participantIds.push_back(clientId);
 }
 
 void VolunteerEvent::closeApplications() {
-    this->applicationsOpen = false;
+    if (!isPublished() || isCancelled() || !utils::isUpcomingDate(getDate()))
+        throw InvalidStateException("Applications can be closed only for an upcoming published event.");
+
+    if (!applicationsOpen)
+        throw InvalidStateException("Volunteer applications are already closed.");
+
+    applicationsOpen = false;
 }
 
-void VolunteerEvent::printInfo() const {
-    std::cout << "Id: " << this->id << std::endl;
-    std::cout << "Title: " << this->title << std::endl;
-    std::cout << "Date: " << this->date << std::endl;
-    std::cout << "Address: " << this->address << std::endl;
-    std::cout << "Type: Volunteer" << std::endl;
-    std::cout << "Status: " << toString(this->status) << std::endl;
-    std::cout << "Description: " << this->description << std::endl;
-    std::cout << "Applications: " << (this->applicationsOpen ? "Open" : "Closed") << std::endl;
-    std::cout << "Participants: " << this->participantIds.size() << std::endl;
+void VolunteerEvent::accept(EventVisitor& visitor) const {
+    visitor.visit(*this);
 }
 
-std::vector<std::string> VolunteerEvent::toRecord() const {
-    std::vector<std::string> participantParts;
-
-    for (int participantId : this->participantIds) {
-        participantParts.push_back(std::to_string(participantId));
-    }
-
-    return {
-        "EVENT",
-        "Volunteer",
-        std::to_string(this->id),
-        this->title,
-        this->date,
-        this->address,
-        std::to_string(this->creatorId),
-        toString(this->status),
-        this->description,
-        this->applicationsOpen ? "1" : "0",
-        StringUtils::joinEscaped(participantParts, ',')
-    };
+std::unique_ptr<Event> VolunteerEvent::clone() const {
+    return std::make_unique<VolunteerEvent>(*this);
 }
