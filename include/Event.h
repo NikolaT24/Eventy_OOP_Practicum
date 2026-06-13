@@ -1,23 +1,32 @@
-#ifndef EVENT_H
-#define EVENT_H
+#pragma once
 
+#include <memory>
+#include <ostream>
 #include <string>
-#include <vector>
 #include "Enums.h"
 
+class EventVisitor;
+
 class Event {
-protected:
+private:
     int id;
     std::string title;
     std::string date;
     std::string address;
     int creatorId;
     EventStatus status;
+    std::string cancellationReason;
+
+protected:
+    Event(int id, std::string title, std::string date, std::string address, int creatorId, EventStatus status = EventStatus::Pending, std::string cancellationReason = "");
 
 public:
-    Event();
-    Event(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, EventStatus status = EventStatus::Pending);
     virtual ~Event() = default;
+
+    Event(const Event&) = default;
+    Event& operator=(const Event&) = default;
+    Event(Event&&) noexcept = default;
+    Event& operator=(Event&&) noexcept = default;
 
     int getId() const;
     const std::string& getTitle() const;
@@ -25,18 +34,17 @@ public:
     const std::string& getAddress() const;
     int getCreatorId() const;
     EventStatus getStatus() const;
+    const std::string& getCancellationReason() const;
 
     bool isPending() const;
     bool isPublished() const;
     bool isCancelled() const;
 
     void publish();
-    void cancel();
+    void cancel(const std::string& reason);
 
-    virtual EventType getType() const = 0;
-    virtual void printInfo() const = 0;
-    virtual void printShort() const;
-    virtual std::vector<std::string> toRecord() const = 0;
+    void printSummary(std::ostream& output) const;
+
+    virtual void accept(EventVisitor& visitor) const = 0;
+    virtual std::unique_ptr<Event> clone() const = 0;
 };
-
-#endif
