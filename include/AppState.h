@@ -1,5 +1,4 @@
-#ifndef APP_STATE_H
-#define APP_STATE_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -27,6 +26,11 @@ private:
 
 public:
     AppState();
+    AppState(const AppState& other);
+    AppState& operator=(const AppState& other);
+    AppState(AppState&& other) noexcept = default;
+    AppState& operator=(AppState&& other) noexcept = default;
+    ~AppState() = default;
 
     void clear();
     void ensureAdmin();
@@ -71,5 +75,3 @@ public:
 
     void addNotification(int receiverId, const std::string& message);
 };
-
-#endif
