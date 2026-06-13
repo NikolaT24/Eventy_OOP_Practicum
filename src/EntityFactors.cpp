@@ -1,7 +1,7 @@
 #include "EntityFactory.h"
 #include "Admin.h"
 #include "Client.h"
-#include "TicketedEvent.h"
+#include "TicketEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
