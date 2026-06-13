@@ -1,4 +1,4 @@
-#include "TicketedEvent.h"
+#include "TicketEvent.h"
 #include "EventVisitor.h"
 #include "EventyException.h"
 
