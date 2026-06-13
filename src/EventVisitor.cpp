@@ -1,5 +1,5 @@
 #include "EventVisitor.h"
-#include "TicketedEvent.h"
+#include "TicketEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
