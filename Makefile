@@ -1,36 +1,42 @@
-CXX = g++
-CXXFLAGS = -std=c++23 -Wall -Wextra -pedantic -Iinclude
+CXX := g++
+CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Iinclude
+TARGET := eventy
+SOURCES := $(wildcard src/*.cpp)
+OBJECTS := $(SOURCES:.cpp=.o)
 
-SRC = src/main.cpp \
-      src/Admin.cpp \
-      src/AppState.cpp \
-      src/Client.cpp \
-      src/CommandParser.cpp \
-      src/DateUtils.cpp \
-      src/Enums.cpp \
-      src/Event.cpp \
-      src/EventPrinter.cpp \
-      src/EventySystem.cpp \
-      src/IdGenerator.cpp \
-      src/Notification.cpp \
-      src/Request.cpp \
-      src/SeatingPlan.cpp \
-      src/StorageService.cpp \
-      src/StringUtils.cpp \
-      src/Ticket.cpp \
-      src/TicketedEvent.cpp \
-      src/VolunteerEvent.cpp
-
-OBJ = $(SRC:.cpp=.o)
-TARGET = eventy
+.PHONY: all clean run
 
 all: $(TARGET)
 
-$(TARGET): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -o $(TARGET)
+$(TARGET): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
 
-%.o: %.cpp
+src/%.o: src/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+run: $(TARGET)
+	./$(TARGET)
+
 clean:
-	rm -f $(TARGET) eventy.exe $(OBJ)
+	rm -f $(OBJECTS) $(TARGET) eventy.exe
+CXX := g++
+CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Iinclude
+TARGET := eventy
+SOURCES := $(wildcard src/*.cpp)
+OBJECTS := $(SOURCES:.cpp=.o)
+
+.PHONY: all clean run
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
+
+src/%.o: src/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+run: $(TARGET)
+	./$(TARGET)
+
+clean:
+	rm -f $(OBJECTS) $(TARGET) eventy.exe
