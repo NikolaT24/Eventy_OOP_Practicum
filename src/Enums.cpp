@@ -1,137 +1,71 @@
 #include "Enums.h"
 
 std::string toString(UserRole role) {
-    return role == UserRole::Admin ? "Admin" : "Client";
-}
-
-std::string toString(EventType type) {
-    return type == EventType::Ticketed ? "Ticketed" : "Volunteer";
+    switch (role) {
+        case UserRole::Client: return "CLIENT";
+        case UserRole::Admin: return "ADMIN";
+    }
+    return "UNKNOWN";
 }
 
 std::string toString(EventStatus status) {
-    if (status == EventStatus::Pending) {
-        return "Pending";
+    switch (status) {
+        case EventStatus::Pending: return "PENDING";
+        case EventStatus::Published: return "PUBLISHED";
+        case EventStatus::Cancelled: return "CANCELLED";
     }
-
-    if (status == EventStatus::Published) {
-        return "Published";
-    }
-
-    return "Cancelled";
-}
-
-std::string toString(RequestType type) {
-    return type == RequestType::PublishEvent ? "PublishEvent" : "VolunteerApplication";
+    return "UNKNOWN";
 }
 
 std::string toString(RequestStatus status) {
-    if (status == RequestStatus::Pending) {
-        return "Pending";
+    switch (status) {
+        case RequestStatus::Pending: return "PENDING";
+        case RequestStatus::Approved: return "APPROVED";
+        case RequestStatus::Rejected: return "REJECTED";
     }
-
-    if (status == RequestStatus::Approved) {
-        return "Approved";
-    }
-
-    return "Rejected";
+    return "UNKNOWN";
 }
 
 std::string toString(SeatingMode mode) {
-    return mode == SeatingMode::AssignedSeats ? "AssignedSeats" : "GeneralAdmission";
+    switch (mode) {
+        case SeatingMode::GeneralAdmission: return "GENERAL";
+        case SeatingMode::AssignedSeats: return "ASSIGNED";
+    }
+    return "UNKNOWN";
 }
 
-std::string toString(ParticipationType type) {
-    return type == ParticipationType::Volunteer ? "Volunteer" : "Ticket";
-}
-
-std::expected<UserRole, std::string> userRoleFromString(const std::string& text) {
-    if (text == "Client") {
+std::expected<UserRole, std::string> userRoleFromString(const std::string& value) {
+    if (value == "CLIENT") 
         return UserRole::Client;
-    }
-
-    if (text == "Admin") {
+    if (value == "ADMIN") 
         return UserRole::Admin;
-    }
-
-    return std::unexpected("Invalid user role: " + text);
+    return std::unexpected("Unknown user role: " + value);
 }
 
-std::expected<EventType, std::string> eventTypeFromString(const std::string& text) {
-    if (text == "Ticketed") {
-        return EventType::Ticketed;
-    }
-
-    if (text == "Volunteer") {
-        return EventType::Volunteer;
-    }
-
-    return std::unexpected("Invalid event type: " + text);
-}
-
-std::expected<EventStatus, std::string> eventStatusFromString(const std::string& text) {
-    if (text == "Pending") {
+std::expected<EventStatus, std::string> eventStatusFromString(const std::string& value) {
+    if (value == "PENDING") 
         return EventStatus::Pending;
-    }
-
-    if (text == "Published") {
+    if (value == "PUBLISHED") 
         return EventStatus::Published;
-    }
-
-    if (text == "Cancelled") {
+    if (value == "CANCELLED") 
         return EventStatus::Cancelled;
-    }
-
-    return std::unexpected("Invalid event status: " + text);
+    return std::unexpected("Unknown event status: " + value);
 }
 
-std::expected<RequestType, std::string> requestTypeFromString(const std::string& text) {
-    if (text == "PublishEvent") {
-        return RequestType::PublishEvent;
-    }
-
-    if (text == "VolunteerApplication") {
-        return RequestType::VolunteerApplication;
-    }
-
-    return std::unexpected("Invalid request type: " + text);
-}
-
-std::expected<RequestStatus, std::string> requestStatusFromString(const std::string& text) {
-    if (text == "Pending") {
+std::expected<RequestStatus, std::string> requestStatusFromString(const std::string& value) {
+    if (value == "PENDING") 
         return RequestStatus::Pending;
-    }
-
-    if (text == "Approved") {
+    if (value == "APPROVED") 
         return RequestStatus::Approved;
-    }
-
-    if (text == "Rejected") {
+    if (value == "REJECTED") 
         return RequestStatus::Rejected;
-    }
-
-    return std::unexpected("Invalid request status: " + text);
+    return std::unexpected("Unknown request status: " + value);
 }
 
-std::expected<SeatingMode, std::string> seatingModeFromString(const std::string& text) {
-    if (text == "GeneralAdmission") {
+std::expected<SeatingMode, std::string> seatingModeFromString(const std::string& value) {
+    if (value == "GENERAL") 
         return SeatingMode::GeneralAdmission;
-    }
-
-    if (text == "AssignedSeats") {
+    if (value == "ASSIGNED") 
         return SeatingMode::AssignedSeats;
-    }
-
-    return std::unexpected("Invalid seating mode: " + text);
-}
-
-std::expected<ParticipationType, std::string> participationTypeFromString(const std::string& text) {
-    if (text == "Ticket") {
-        return ParticipationType::Ticket;
-    }
-
-    if (text == "Volunteer") {
-        return ParticipationType::Volunteer;
-    }
-
-    return std::unexpected("Invalid participation type: " + text);
+    return std::unexpected("Unknown seating mode: " + value);
 }
