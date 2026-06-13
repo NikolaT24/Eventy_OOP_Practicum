@@ -1,92 +1,55 @@
 #include "TicketedEvent.h"
-#include <iostream>
+#include "EventVisitor.h"
+#include "EventyException.h"
 
-TicketedEvent::TicketedEvent() : Event() {
-    this->price = 0;
-    this->seating = SeatingPlan::general(0);
+TicketedEvent::TicketedEvent(int id, std::string title, std::string date, std::string address,
+                             int creatorId, double ticketPrice, SeatingPlan seatingPlan,
+                             EventStatus status, std::string cancellationReason)
+    : Event(id, std::move(title), std::move(date), std::move(address), creatorId,
+            status, std::move(cancellationReason)),
+      ticketPrice(ticketPrice),
+      seatingPlan(std::move(seatingPlan)) {
+    if (ticketPrice < 0)
+        throw ValidationException("Ticket price cannot be negative.");
 }
 
-TicketedEvent::TicketedEvent(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, double price, const SeatingPlan& seating)
-    : Event(id, title, date, address, creatorId, EventStatus::Pending) {
-    this->price = price;
-    this->seating = seating;
+double TicketedEvent::getTicketPrice() const {
+    return ticketPrice;
 }
 
-TicketedEvent::TicketedEvent(int id, const std::string& title, const std::string& date, const std::string& address, int creatorId, EventStatus status, double price, const SeatingPlan& seating)
-    : Event(id, title, date, address, creatorId, status) {
-    this->price = price;
-    this->seating = seating;
+const SeatingPlan& TicketedEvent::getSeatingPlan() const {
+    return seatingPlan;
 }
 
-EventType TicketedEvent::getType() const {
-    return EventType::Ticketed;
+SeatingPlan& TicketedEvent::getSeatingPlan() {
+    return seatingPlan;
 }
 
-double TicketedEvent::getPrice() const {
-    return this->price;
+double TicketedEvent::priceFor(int count) const {
+    if (count <= 0)
+        throw ValidationException("Ticket count must be positive.");
+
+    return ticketPrice * count;
 }
 
-const SeatingPlan& TicketedEvent::getSeating() const {
-    return this->seating;
+void TicketedEvent::reserveGeneral(int count) {
+    if (!isPublished())
+        throw InvalidStateException("Tickets can be purchased only for a published event.");
+
+    seatingPlan.reserve(count);
 }
 
-SeatingPlan& TicketedEvent::getSeating() {
-    return this->seating;
+void TicketedEvent::reserveSeats(const std::vector<Seat>& seats) {
+    if (!isPublished())
+        throw InvalidStateException("Tickets can be purchased only for a published event.");
+
+    seatingPlan.reserve(seats);
 }
 
-bool TicketedEvent::canBuyGeneral(int count) const {
-    return this->isPublished() && this->seating.canReserveGeneral(count);
+void TicketedEvent::accept(EventVisitor& visitor) const {
+    visitor.visit(*this);
 }
 
-bool TicketedEvent::canBuySeats(const std::vector<Seat>& seats) const {
-    return this->isPublished() && this->seating.canReserveSeats(seats);
-}
-
-bool TicketedEvent::buyGeneral(int count) {
-    if (!this->canBuyGeneral(count)) {
-        return false;
-    }
-
-    return this->seating.reserveGeneral(count);
-}
-
-bool TicketedEvent::buySeats(const std::vector<Seat>& seats) {
-    if (!this->canBuySeats(seats)) {
-        return false;
-    }
-
-    return this->seating.reserveSeats(seats);
-}
-
-void TicketedEvent::printInfo() const {
-    std::cout << "Id: " << this->id << std::endl;
-    std::cout << "Title: " << this->title << std::endl;
-    std::cout << "Date: " << this->date << std::endl;
-    std::cout << "Address: " << this->address << std::endl;
-    std::cout << "Type: Ticketed" << std::endl;
-    std::cout << "Status: " << toString(this->status) << std::endl;
-    std::cout << "Price: " << this->price << std::endl;
-    std::cout << "Seating: " << toString(this->seating.getMode()) << std::endl;
-    std::cout << "Capacity: " << this->seating.getCapacity() << std::endl;
-    std::cout << "Available: " << this->seating.getAvailableCount() << std::endl;
-}
-
-std::vector<std::string> TicketedEvent::toRecord() const {
-    return {
-        "EVENT",
-        "Ticketed",
-        std::to_string(this->id),
-        this->title,
-        this->date,
-        this->address,
-        std::to_string(this->creatorId),
-        toString(this->status),
-        std::to_string(this->price),
-        toString(this->seating.getMode()),
-        std::to_string(this->seating.getCapacity()),
-        std::to_string(this->seating.getRows()),
-        std::to_string(this->seating.getCols()),
-        std::to_string(this->seating.getSoldCount()),
-        SeatingPlan::encodeSeats(this->seating.getOccupiedSeats())
-    };
+std::unique_ptr<Event> TicketedEvent::clone() const {
+    return std::make_unique<TicketedEvent>(*this);
 }
