@@ -1,6 +1,6 @@
-#ifndef REQUEST_H
-#define REQUEST_H
+#pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include "Enums.h"
@@ -8,34 +8,64 @@
 class Request {
 private:
     int id;
-    RequestType type;
-    RequestStatus status;
     int requesterId;
     int eventId;
-    std::string text;
-    std::string reason;
+    RequestStatus status;
+    std::string rejectionReason;
+
+protected:
+    Request(int id, int requesterId, int eventId, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+
+    std::vector<std::string> baseRecord(const std::string& type) const;
 
 public:
-    Request();
-    Request(int id, RequestType type, int requesterId, int eventId, const std::string& text);
-    Request(int id, RequestType type, RequestStatus status, int requesterId, int eventId, const std::string& text, const std::string& reason);
+    virtual ~Request() = default;
+
+    Request(const Request&) = default;
+    Request& operator=(const Request&) = default;
+    Request(Request&&) noexcept = default;
+    Request& operator=(Request&&) noexcept = default;
 
     int getId() const;
-    RequestType getType() const;
-    RequestStatus getStatus() const;
     int getRequesterId() const;
     int getEventId() const;
-    const std::string& getText() const;
-    const std::string& getReason() const;
+    RequestStatus getStatus() const;
+    const std::string& getRejectionReason() const;
 
     bool isPending() const;
-    bool isPublishRequest() const;
-    bool isVolunteerApplication() const;
-
     void approve();
     void reject(const std::string& reason);
-    void print() const;
-    std::vector<std::string> toRecord() const;
+
+    virtual bool isPublishRequest() const = 0;
+    virtual bool isVolunteerApplication() const = 0;
+    virtual std::string summary() const = 0;
+    virtual std::vector<std::string> toRecord() const = 0;
+    virtual std::unique_ptr<Request> clone() const = 0;
 };
 
-#endif
+class PublishEventRequest final : public Request {
+public:
+    PublishEventRequest(int id, int requesterId, int eventId, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+
+    bool isPublishRequest() const override;
+    bool isVolunteerApplication() const override;
+    std::string summary() const override;
+    std::vector<std::string> toRecord() const override;
+    std::unique_ptr<Request> clone() const override;
+};
+
+class VolunteerApplicationRequest final : public Request {
+private:
+    std::string motivation;
+
+public:
+    VolunteerApplicationRequest(int id, int requesterId, int eventId, std::string motivation, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+
+    const std::string& getMotivation() const;
+
+    bool isPublishRequest() const override;
+    bool isVolunteerApplication() const override;
+    std::string summary() const override;
+    std::vector<std::string> toRecord() const override;
+    std::unique_ptr<Request> clone() const override;
+};
