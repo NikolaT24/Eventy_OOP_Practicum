@@ -1,58 +1,30 @@
 #include "Notification.h"
-#include <iostream>
 
-Notification::Notification() {
-    this->id = 0;
-    this->receiverId = 0;
-    this->message = "";
-    this->createdAt = "";
-    this->read = false;
-}
-
-Notification::Notification(int id, int receiverId, const std::string& message, const std::string& createdAt, bool read) {
-    this->id = id;
-    this->receiverId = receiverId;
-    this->message = message;
-    this->createdAt = createdAt;
-    this->read = read;
-}
+Notification::Notification(int id, std::string message, std::string createdAt, bool read)
+    : id(id), message(std::move(message)), createdAt(std::move(createdAt)), read(read) {}
 
 int Notification::getId() const {
-    return this->id;
-}
-
-int Notification::getReceiverId() const {
-    return this->receiverId;
+    return id;
 }
 
 const std::string& Notification::getMessage() const {
-    return this->message;
+    return message;
 }
 
 const std::string& Notification::getCreatedAt() const {
-    return this->createdAt;
+    return createdAt;
 }
 
 bool Notification::isRead() const {
-    return this->read;
+    return read;
 }
 
 void Notification::markAsRead() {
-    this->read = true;
+    read = true;
 }
 
-void Notification::print() const {
-    std::cout << (this->read ? "[Read] " : "[Unread] ");
-    std::cout << this->createdAt << " - " << this->message << std::endl;
-}
-
-std::vector<std::string> Notification::toRecord() const {
-    return {
-        "NOTIFICATION",
-        std::to_string(this->id),
-        std::to_string(this->receiverId),
-        this->message,
-        this->createdAt,
-        this->read ? "1" : "0"
-    };
+std::ostream& operator<<(std::ostream& output, const Notification& notification) {
+    output << (notification.read ? "[Read] " : "[Unread] ")
+           << notification.createdAt << " | " << notification.message;
+    return output;
 }
