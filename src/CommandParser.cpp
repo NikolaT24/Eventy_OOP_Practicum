@@ -1,39 +1,34 @@
-#include "CommandParser.h"
-#include <cctype>
+#include "Command.h"
+#include <sstream>
 
-ParsedCommand CommandParser::parse(const std::string& line) {
-    std::vector<std::string> tokens;
-    std::string current;
-    bool insideQuotes = false;
+FunctionCommand::FunctionCommand(std::function<void(const std::vector<std::string>&)> action)
+    : action(std::move(action)) {}
 
-    for (int i = 0; i < (int)line.size(); i++) {
-        char ch = line[i];
+void FunctionCommand::execute(const std::vector<std::string>& arguments) {
+    action(arguments);
+}
 
-        if (ch == '"') {
-            insideQuotes = !insideQuotes;
-        } else if (std::isspace((unsigned char)ch) && !insideQuotes) {
-            if (!current.empty()) {
-                tokens.push_back(current);
-                current.clear();
-            }
-        } else {
-            current += ch;
-        }
-    }
+void CommandRegistry::add(const std::string& name, std::function<void(const std::vector<std::string>&)> action) {
+    commands[name] = std::make_unique<FunctionCommand>(std::move(action));
+}
 
-    if (!current.empty()) {
-        tokens.push_back(current);
-    }
+bool CommandRegistry::execute(const ParsedCommand& command) const {
+    auto iterator = commands.find(command.name);
 
-    ParsedCommand command;
+    if (iterator == commands.end())
+        return false;
 
-    if (!tokens.empty()) {
-        command.name = tokens[0];
+    iterator->second->execute(command.arguments);
+    return true;
+}
 
-        for (int i = 1; i < (int)tokens.size(); i++) {
-            command.args.push_back(tokens[i]);
-        }
-    }
+ParsedCommand parseCommand(const std::string& line) {
+    std::stringstream input(line);
+    ParsedCommand result;
+    input >> result.name;
 
-    return command;
+    std::string argument;
+    while (input >> argument)
+        result.arguments.push_back(argument);
+    return result;
 }
