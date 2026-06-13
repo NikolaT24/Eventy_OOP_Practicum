@@ -1,206 +1,181 @@
 #include "SeatingPlan.h"
-#include "StringUtils.h"
-#include <iostream>
-#include <set>
+#include <algorithm>
+#include <cctype>
+#include <iomanip>
+#include <sstream>
+#include "EventyException.h"
+#include "Utils.h"
 
-SeatingPlan::SeatingPlan() {
-    this->mode = SeatingMode::GeneralAdmission;
-    this->capacity = 0;
-    this->rows = 0;
-    this->cols = 0;
-    this->soldCount = 0;
+SeatingPlan::SeatingPlan(SeatingMode mode, int capacity, int rows, int columns,
+                         int soldCount, std::vector<Seat> occupiedSeats)
+    : mode(mode),
+      capacity(capacity),
+      rows(rows),
+      columns(columns),
+      soldCount(soldCount),
+      occupiedSeats(std::move(occupiedSeats)) {}
+
+SeatingPlan SeatingPlan::generalAdmission(int capacity) {
+    if (capacity <= 0)
+        throw ValidationException("Capacity must be positive.");
+
+    return SeatingPlan(SeatingMode::GeneralAdmission, capacity, 0, 0, 0, {});
 }
 
-SeatingPlan SeatingPlan::general(int capacity) {
-    SeatingPlan plan;
-    plan.mode = SeatingMode::GeneralAdmission;
-    plan.capacity = capacity;
-    plan.rows = 0;
-    plan.cols = 0;
-    plan.soldCount = 0;
-    return plan;
+SeatingPlan SeatingPlan::assignedSeats(int rows, int columns) {
+    if (rows <= 0 || columns <= 0 || rows > 26)
+        throw ValidationException("Rows must be between 1 and 26 and columns must be positive.");
+        
+    return SeatingPlan(SeatingMode::AssignedSeats, rows * columns, rows, columns, 0, {});
 }
 
-SeatingPlan SeatingPlan::assigned(int rows, int cols) {
-    SeatingPlan plan;
-    plan.mode = SeatingMode::AssignedSeats;
-    plan.capacity = rows * cols;
-    plan.rows = rows;
-    plan.cols = cols;
-    plan.soldCount = 0;
-    return plan;
-}
+SeatingPlan SeatingPlan::restore(SeatingMode mode, int capacity, int rows, int columns,
+                                 int soldCount, std::vector<Seat> occupiedSeats) {
+    if (capacity < 0 || rows < 0 || columns < 0 || soldCount < 0)
+        throw ValidationException("Stored seating data contains negative values.");
 
-SeatingPlan SeatingPlan::fromStored(SeatingMode mode, int capacity, int rows, int cols, int soldCount, const std::vector<Seat>& occupiedSeats) {
-    SeatingPlan plan;
-    plan.mode = mode;
-    plan.capacity = capacity;
-    plan.rows = rows;
-    plan.cols = cols;
-    plan.soldCount = soldCount;
-    plan.occupiedSeats = occupiedSeats;
-    return plan;
-}
-
-bool SeatingPlan::containsSeat(const Seat& seat) const {
-    for (const Seat& current : this->occupiedSeats) {
-        if (current == seat) {
-            return true;
-        }
-    }
-
-    return false;
+    return SeatingPlan(mode, capacity, rows, columns, soldCount, std::move(occupiedSeats));
 }
 
 SeatingMode SeatingPlan::getMode() const {
-    return this->mode;
+    return mode;
 }
 
 int SeatingPlan::getCapacity() const {
-    return this->capacity;
+    return capacity;
 }
 
 int SeatingPlan::getRows() const {
-    return this->rows;
+    return rows;
 }
 
-int SeatingPlan::getCols() const {
-    return this->cols;
+int SeatingPlan::getColumns() const {
+    return columns;
 }
 
 int SeatingPlan::getSoldCount() const {
-    return this->soldCount;
+    return soldCount;
 }
 
 int SeatingPlan::getAvailableCount() const {
-    return this->capacity - this->soldCount;
+    return capacity - soldCount;
 }
 
 const std::vector<Seat>& SeatingPlan::getOccupiedSeats() const {
-    return this->occupiedSeats;
+    return occupiedSeats;
 }
 
-bool SeatingPlan::isValidSeat(const Seat& seat) const {
-    return this->mode == SeatingMode::AssignedSeats && seat.first >= 1 && seat.first <= this->rows && seat.second >= 1 && seat.second <= this->cols;
+bool SeatingPlan::contains(const Seat& seat) const {
+    return std::find(occupiedSeats.begin(), occupiedSeats.end(), seat) != occupiedSeats.end();
 }
 
-bool SeatingPlan::isFreeSeat(const Seat& seat) const {
-    return this->isValidSeat(seat) && !this->containsSeat(seat);
+bool SeatingPlan::isValid(const Seat& seat) const {
+    return mode == SeatingMode::AssignedSeats &&
+           seat.first >= 0 && seat.first < rows &&
+           seat.second >= 0 && seat.second < columns;
 }
 
-bool SeatingPlan::canReserveGeneral(int count) const {
-    return this->mode == SeatingMode::GeneralAdmission && count > 0 && this->soldCount + count <= this->capacity;
+bool SeatingPlan::isFree(const Seat& seat) const {
+    return isValid(seat) && !contains(seat);
 }
 
-bool SeatingPlan::canReserveSeats(const std::vector<Seat>& seats) const {
-    if (this->mode != SeatingMode::AssignedSeats || seats.empty()) {
+bool SeatingPlan::canReserve(int count) const {
+    return mode == SeatingMode::GeneralAdmission && count > 0 && count <= getAvailableCount();
+}
+
+bool SeatingPlan::canReserve(const std::vector<Seat>& seats) const {
+    if (mode != SeatingMode::AssignedSeats || seats.empty()) 
         return false;
-    }
 
-    std::set<Seat> uniqueSeats;
+    std::vector<Seat> uniqueSeats;
 
     for (const Seat& seat : seats) {
-        if (!this->isFreeSeat(seat)) {
+        if (!isFree(seat)) 
             return false;
-        }
-
-        if (uniqueSeats.contains(seat)) {
+        if (std::find(uniqueSeats.begin(), uniqueSeats.end(), seat) != uniqueSeats.end()) 
             return false;
-        }
-
-        uniqueSeats.insert(seat);
+        uniqueSeats.push_back(seat);
     }
 
-    return this->soldCount + (int)seats.size() <= this->capacity;
+    return static_cast<int>(seats.size()) <= getAvailableCount();
 }
 
-bool SeatingPlan::reserveGeneral(int count) {
-    if (!this->canReserveGeneral(count)) {
-        return false;
-    }
+void SeatingPlan::reserve(int count) {
+    if (!canReserve(count))
+        throw InvalidStateException("The requested number of tickets is not available.");
 
-    this->soldCount += count;
-    return true;
+    soldCount += count;
 }
 
-bool SeatingPlan::reserveSeats(const std::vector<Seat>& seats) {
-    if (!this->canReserveSeats(seats)) {
-        return false;
-    }
+void SeatingPlan::reserve(const std::vector<Seat>& seats) {
+    if (!canReserve(seats))
+        throw InvalidStateException("At least one selected seat is invalid, occupied, or duplicated.");
 
-    for (const Seat& seat : seats) {
-        this->occupiedSeats.push_back(seat);
-    }
-
-    this->soldCount += (int)seats.size();
-    return true;
+    occupiedSeats.insert(occupiedSeats.end(), seats.begin(), seats.end());
+    soldCount += static_cast<int>(seats.size());
 }
 
-void SeatingPlan::print() const {
-    if (this->mode == SeatingMode::GeneralAdmission) {
-        std::cout << "Capacity: " << this->capacity << std::endl;
-        std::cout << "Sold: " << this->soldCount << std::endl;
-        std::cout << "Free: " << this->getAvailableCount() << std::endl;
+void SeatingPlan::print(std::ostream& output) const {
+    if (mode == SeatingMode::GeneralAdmission) {
+        output << "General admission | capacity: " << capacity
+               << " | sold: " << soldCount
+               << " | available: " << getAvailableCount() << '\n';
         return;
     }
 
-    std::cout << "Seating map ([ ] free, [X] occupied):" << std::endl;
-    std::cout << "    ";
+    output << "    ";
+    for (int column = 0; column < columns; ++column)
+        output << std::setw(4) << column + 1;
+    output << '\n';
 
-    for (int c = 1; c <= this->cols; c++) {
-        std::cout << c << "   ";
+    for (int row = 0; row < rows; ++row) {
+        output << static_cast<char>('A' + row) << "   ";
+
+        for (int column = 0; column < columns; ++column)
+            output << (contains({row, column}) ? "[X] " : "[ ] ");
+
+        output << '\n';
     }
+}
 
-    std::cout << std::endl;
+std::expected<Seat, std::string> SeatingPlan::parseSeat(const std::string& value) {
+    if (value.size() < 2 || !std::isalpha(static_cast<unsigned char>(value[0])))
+        return std::unexpected("Invalid seat: " + value);
 
-    for (int r = 1; r <= this->rows; r++) {
-        std::cout << r << "  ";
+    const int row = std::toupper(static_cast<unsigned char>(value[0])) - 'A';
+    auto column = utils::toInt(value.substr(1));
 
-        for (int c = 1; c <= this->cols; c++) {
-            if (this->containsSeat({ r, c })) {
-                std::cout << "[X] ";
-            } else {
-                std::cout << "[ ] ";
-            }
-        }
+    if (!column || *column <= 0)
+        return std::unexpected("Invalid seat: " + value);
 
-        std::cout << std::endl;
-    }
+    return Seat{row, *column - 1};
+}
+
+std::string SeatingPlan::seatToString(const Seat& seat) {
+    return std::string(1, static_cast<char>('A' + seat.first)) + std::to_string(seat.second + 1);
 }
 
 std::string SeatingPlan::encodeSeats(const std::vector<Seat>& seats) {
-    std::vector<std::string> parts;
+    std::vector<std::string> values;
+    values.reserve(seats.size());
 
-    for (const Seat& seat : seats) {
-        parts.push_back(std::to_string(seat.first) + "," + std::to_string(seat.second));
-    }
+    for (const Seat& seat : seats)
+        values.push_back(seatToString(seat));
 
-    return StringUtils::joinEscaped(parts, ';');
+    return utils::join(values, ',');
 }
 
-std::vector<Seat> SeatingPlan::decodeSeats(const std::string& text) {
-    std::vector<Seat> seats;
+std::vector<Seat> SeatingPlan::decodeSeats(const std::string& value) {
+    std::vector<Seat> result;
 
-    if (text.empty()) {
-        return seats;
+    if (value.empty()) 
+        return result;
+
+    for (const std::string& part : utils::split(value, ',')) {
+        auto seat = parseSeat(part);
+        if (seat) 
+            result.push_back(*seat);
     }
 
-    std::vector<std::string> parts = StringUtils::splitEscaped(text, ';');
-
-    for (const std::string& part : parts) {
-        std::vector<std::string> coords = StringUtils::splitEscaped(part, ',');
-
-        if (coords.size() != 2) {
-            continue;
-        }
-
-        std::optional<int> row = StringUtils::toInt(coords[0]);
-        std::optional<int> col = StringUtils::toInt(coords[1]);
-
-        if (row.has_value() && col.has_value()) {
-            seats.push_back({ row.value(), col.value() });
-        }
-    }
-
-    return seats;
+    return result;
 }
