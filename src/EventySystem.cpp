@@ -8,7 +8,7 @@
 #include "EventyException.h"
 #include "Request.h"
 #include "SeatingPlan.h"
-#include "TicketedEvent.h"
+#include "TicketEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
