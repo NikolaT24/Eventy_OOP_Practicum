@@ -1,91 +1,70 @@
 #include "Ticket.h"
-#include <iostream>
+#include "EventyException.h"
 
-Ticket::Ticket() {
-    this->id = 0;
-    this->ownerId = 0;
-    this->eventId = 0;
-    this->eventTitle = "";
-    this->count = 0;
-    this->totalPrice = 0;
-    this->participationType = ParticipationType::Ticket;
-}
-
-Ticket::Ticket(int id, int ownerId, int eventId, const std::string& eventTitle, int count, double totalPrice, const std::vector<Seat>& seats, ParticipationType participationType) {
-    this->id = id;
-    this->ownerId = ownerId;
-    this->eventId = eventId;
-    this->eventTitle = eventTitle;
-    this->count = count;
-    this->totalPrice = totalPrice;
-    this->seats = seats;
-    this->participationType = participationType;
+Ticket::Ticket(int id, int ownerId, int eventId, std::string eventTitle,
+               int count, double totalPrice, std::vector<Seat> seats)
+    : id(id),
+      ownerId(ownerId),
+      eventId(eventId),
+      eventTitle(std::move(eventTitle)),
+      count(count),
+      totalPrice(totalPrice),
+      seats(std::move(seats)) {
+    if (id <= 0 || ownerId <= 0 || eventId <= 0 || count <= 0 || totalPrice < 0)
+        throw ValidationException("Ticket data is invalid.");
+    if (!this->seats.empty() && static_cast<int>(this->seats.size()) != count)
+        throw ValidationException("Seat count does not match ticket count.");
 }
 
 int Ticket::getId() const {
-    return this->id;
+    return id;
 }
 
 int Ticket::getOwnerId() const {
-    return this->ownerId;
+    return ownerId;
 }
 
 int Ticket::getEventId() const {
-    return this->eventId;
+    return eventId;
 }
 
 const std::string& Ticket::getEventTitle() const {
-    return this->eventTitle;
+    return eventTitle;
 }
 
 int Ticket::getCount() const {
-    return this->count;
+    return count;
 }
 
 double Ticket::getTotalPrice() const {
-    return this->totalPrice;
+    return totalPrice;
 }
 
 const std::vector<Seat>& Ticket::getSeats() const {
-    return this->seats;
-}
-
-ParticipationType Ticket::getParticipationType() const {
-    return this->participationType;
-}
-
-void Ticket::print() const {
-    std::cout << "Record #" << this->id << std::endl;
-    std::cout << "Type: " << toString(this->participationType) << std::endl;
-    std::cout << "Event: " << this->eventTitle << " (#" << this->eventId << ")" << std::endl;
-    std::cout << "Count: " << this->count << std::endl;
-    std::cout << "Total price: " << this->totalPrice << std::endl;
-
-    if (!this->seats.empty()) {
-        std::cout << "Seats: ";
-
-        for (int i = 0; i < (int)this->seats.size(); i++) {
-            if (i > 0) {
-                std::cout << ", ";
-            }
-
-            std::cout << "(" << this->seats[i].first << "," << this->seats[i].second << ")";
-        }
-
-        std::cout << std::endl;
-    }
+    return seats;
 }
 
 std::vector<std::string> Ticket::toRecord() const {
     return {
         "TICKET",
-        std::to_string(this->id),
-        std::to_string(this->ownerId),
-        std::to_string(this->eventId),
-        this->eventTitle,
-        std::to_string(this->count),
-        std::to_string(this->totalPrice),
-        SeatingPlan::encodeSeats(this->seats),
-        toString(this->participationType)
+        std::to_string(id),
+        std::to_string(ownerId),
+        std::to_string(eventId),
+        eventTitle,
+        std::to_string(count),
+        std::to_string(totalPrice),
+        SeatingPlan::encodeSeats(seats)
     };
+}
+
+std::ostream& operator<<(std::ostream& output, const Ticket& ticket) {
+    output << "Ticket #" << ticket.id
+           << " | " << ticket.eventTitle
+           << " | count: " << ticket.count
+           << " | paid: " << ticket.totalPrice;
+
+    if (!ticket.seats.empty())
+        output << " | seats: " << SeatingPlan::encodeSeats(ticket.seats);
+
+    return output;
 }
