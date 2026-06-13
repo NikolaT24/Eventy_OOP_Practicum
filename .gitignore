@@ -2,10 +2,9 @@ eventy
 eventy.exe
 *.o
 *.out
-*.exe
+*.db
 
-data/*.db
-!data/.gitkeep
+data/
 
 .vscode/
 .idea/
