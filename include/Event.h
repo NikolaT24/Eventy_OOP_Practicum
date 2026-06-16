@@ -18,7 +18,9 @@ private:
     std::string cancellationReason;
 
 protected:
-    Event(int id, std::string title, std::string date, std::string address, int creatorId, EventStatus status = EventStatus::Pending, std::string cancellationReason = "");
+    Event(int id, std::string title, std::string date, std::string address,
+          int creatorId, EventStatus status = EventStatus::Pending,
+          std::string cancellationReason = "");
 
 public:
     virtual ~Event() = default;
