@@ -1,29 +1,39 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
-#include "Event.h"
-#include "SeatingPlan.h"
+#include "Enums.h"
+#include "Notification.h"
 
-class TicketedEvent final : public Event {
+class User {
 private:
-    double ticketPrice;
-    SeatingPlan seatingPlan;
+    int id;
+    std::string username;
+    std::string password;
+    std::vector<Notification> notifications;
+
+protected:
+    User(int id, std::string username, std::string password,
+         std::vector<Notification> notifications = {});
 
 public:
-    TicketedEvent(int id, std::string title, std::string date, std::string address,
-                  int creatorId, double ticketPrice, SeatingPlan seatingPlan,
-                  EventStatus status = EventStatus::Pending,
-                  std::string cancellationReason = "");
+    virtual ~User() = default;
 
-    double getTicketPrice() const;
-    const SeatingPlan& getSeatingPlan() const;
-    SeatingPlan& getSeatingPlan();
+    User(const User&) = default;
+    User& operator=(const User&) = default;
+    User(User&&) noexcept = default;
+    User& operator=(User&&) noexcept = default;
 
-    double priceFor(int count) const;
-    void reserveGeneral(int count);
-    void reserveSeats(const std::vector<Seat>& seats);
+    int getId() const;
+    const std::string& getUsername() const;
+    const std::string& getPassword() const;
+    bool checkPassword(const std::string& candidate) const;
 
-    void accept(EventVisitor& visitor) const override;
-    std::unique_ptr<Event> clone() const override;
+    const std::vector<Notification>& getNotifications() const;
+    std::vector<Notification>& getNotifications();
+    void addNotification(Notification notification);
+
+    virtual UserRole getRole() const = 0;
+    virtual std::unique_ptr<User> clone() const = 0;
 };
