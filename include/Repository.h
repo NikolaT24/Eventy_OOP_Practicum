@@ -43,8 +43,10 @@ protected:
 
     void copyFrom(const PrototypeRepository& other) {
         values.reserve(other.values.size());
-        for (const auto& value : other.values)
+
+        for (const auto& value : other.values) {
             values.push_back(value->clone());
+        }
     }
 
 public:
@@ -59,6 +61,7 @@ public:
             values.clear();
             copyFrom(other);
         }
+
         return *this;
     }
 
