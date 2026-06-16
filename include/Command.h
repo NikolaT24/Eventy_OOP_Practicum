@@ -31,7 +31,8 @@ private:
     std::unordered_map<std::string, std::unique_ptr<Command>> commands;
 
 public:
-    void add(const std::string& name, std::function<void(const std::vector<std::string>&)> action);
+    void add(const std::string& name,
+             std::function<void(const std::vector<std::string>&)> action);
     bool execute(const ParsedCommand& command) const;
 };
 
