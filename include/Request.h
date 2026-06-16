@@ -14,7 +14,9 @@ private:
     std::string rejectionReason;
 
 protected:
-    Request(int id, int requesterId, int eventId, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+    Request(int id, int requesterId, int eventId,
+            RequestStatus status = RequestStatus::Pending,
+            std::string rejectionReason = "");
 
     std::vector<std::string> baseRecord(const std::string& type) const;
 
@@ -45,7 +47,9 @@ public:
 
 class PublishEventRequest final : public Request {
 public:
-    PublishEventRequest(int id, int requesterId, int eventId, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+    PublishEventRequest(int id, int requesterId, int eventId,
+                        RequestStatus status = RequestStatus::Pending,
+                        std::string rejectionReason = "");
 
     bool isPublishRequest() const override;
     bool isVolunteerApplication() const override;
@@ -59,7 +63,10 @@ private:
     std::string motivation;
 
 public:
-    VolunteerApplicationRequest(int id, int requesterId, int eventId, std::string motivation, RequestStatus status = RequestStatus::Pending, std::string rejectionReason = "");
+    VolunteerApplicationRequest(int id, int requesterId, int eventId,
+                                std::string motivation,
+                                RequestStatus status = RequestStatus::Pending,
+                                std::string rejectionReason = "");
 
     const std::string& getMotivation() const;
 
