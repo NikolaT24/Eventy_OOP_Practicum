@@ -8,34 +8,38 @@
 #include "EventyException.h"
 #include "Request.h"
 #include "SeatingPlan.h"
-#include "TicketEvent.h"
+#include "TicketedEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
 namespace {
     void requireExact(const std::vector<std::string>& arguments, std::size_t count,
                       const std::string& usage) {
-        if (arguments.size() != count)
+        if (arguments.size() != count) {
             throw ValidationException("Usage: " + usage);
+        }
     }
 
     void requireAtLeast(const std::vector<std::string>& arguments, std::size_t count,
                         const std::string& usage) {
-        if (arguments.size() < count)
+        if (arguments.size() < count) {
             throw ValidationException("Usage: " + usage);
+        }
     }
 
     int positiveInt(const std::string& value, const std::string& name) {
         auto parsed = utils::toInt(value);
-        if (!parsed || *parsed <= 0)
+        if (!parsed || *parsed <= 0) {
             throw ValidationException(name + " must be a positive integer.");
+        }
         return *parsed;
     }
 
     double nonNegativeDouble(const std::string& value, const std::string& name) {
         auto parsed = utils::toDouble(value);
-        if (!parsed || *parsed < 0)
+        if (!parsed || *parsed < 0) {
             throw ValidationException(name + " must be a non-negative number.");
+        }
         return *parsed;
     }
 }
@@ -65,8 +69,7 @@ EventySystem& EventySystem::instance() {
 }
 
 void EventySystem::ensureAdmin() {
-    if (users.findByUsername(Admin::DefaultUsername) != nullptr) 
-        return;
+    if (users.findByUsername(Admin::DefaultUsername) != nullptr) return;
     users.add(std::make_unique<Admin>(ids.nextUserId++));
 }
 
@@ -186,12 +189,13 @@ void EventySystem::run() {
     std::cout << "Welcome to Eventy!\nType help to see available commands.\n";
 
     while (running) {
-        if (managedEventId != -1)
+        if (managedEventId != -1) {
             std::cout << "event#" << managedEventId << "> ";
-        else if (currentUser() == nullptr)
+        } else if (currentUser() == nullptr) {
             std::cout << "guest> ";
-        else
+        } else {
             std::cout << currentUser()->getUsername() << "> ";
+        }
 
         std::string line;
         if (!std::getline(std::cin, line)) {
@@ -215,17 +219,19 @@ void EventySystem::run() {
 void EventySystem::executeCommand(const ParsedCommand& command) {
     bool executed = false;
 
-    if (managedEventId != -1)
+    if (managedEventId != -1) {
         executed = managementCommands.execute(command);
-    else if (currentUser() == nullptr)
+    } else if (currentUser() == nullptr) {
         executed = guestCommands.execute(command);
-    else if (currentAdmin() != nullptr)
+    } else if (currentAdmin() != nullptr) {
         executed = adminCommands.execute(command);
-    else
+    } else {
         executed = clientCommands.execute(command);
+    }
 
-    if (!executed)
+    if (!executed) {
         std::cout << "Unknown command for the current mode. Type help.\n";
+    }
 }
 
 void EventySystem::printGuestHelp(const std::vector<std::string>& arguments) const {
@@ -270,10 +276,13 @@ void EventySystem::printManagementHelp(const std::vector<std::string>& arguments
 void EventySystem::registerClient(const std::vector<std::string>& arguments) {
     requireExact(arguments, 2, "register <username> <password>");
 
-    if (users.findByUsername(arguments[0]) != nullptr)
+    if (users.findByUsername(arguments[0]) != nullptr) {
         throw ValidationException("Username is already taken.");
-    if (arguments[0].size() < 3 || arguments[1].size() < 4)
+    }
+
+    if (arguments[0].size() < 3 || arguments[1].size() < 4) {
         throw ValidationException("Username must have at least 3 characters and password at least 4.");
+    }
 
     users.add(std::make_unique<Client>(ids.nextUserId++, arguments[0], arguments[1]));
     std::cout << "Registration completed successfully.\n";
@@ -283,8 +292,9 @@ void EventySystem::login(const std::vector<std::string>& arguments) {
     requireExact(arguments, 2, "login <username> <password>");
 
     User* user = users.findByUsername(arguments[0]);
-    if (user == nullptr || !user->checkPassword(arguments[1]))
+    if (user == nullptr || !user->checkPassword(arguments[1])) {
         throw AuthenticationException("Invalid username or password.");
+    }
 
     currentUserId = user->getId();
     std::cout << "Logged in as " << user->getUsername() << ".\n";
@@ -301,8 +311,9 @@ void EventySystem::exitApplication(const std::vector<std::string>& arguments) {
     requireExact(arguments, 0, "exit");
 
     auto result = storage.save(users, events, requests, tickets, ids);
-    if (!result)
+    if (!result) {
         throw EventyException("Could not save data: " + result.error());
+    }
 
     running = false;
     std::cout << "Data saved. Goodbye.\n";
@@ -311,20 +322,17 @@ void EventySystem::exitApplication(const std::vector<std::string>& arguments) {
 void EventySystem::showWallet(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "wallet");
     const Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients have a wallet.");
+    if (client == nullptr) throw AuthorizationException("Only clients have a wallet.");
     std::cout << "Balance: " << client->getBalance() << '\n';
 }
 
 void EventySystem::addBalance(const std::vector<std::string>& arguments) {
     requireExact(arguments, 1, "add-balance <amount>");
     Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients can add balance.");
+    if (client == nullptr) throw AuthorizationException("Only clients can add balance.");
 
     auto amount = utils::toDouble(arguments[0]);
-    if (!amount) 
-        throw ValidationException(amount.error());
+    if (!amount) throw ValidationException(amount.error());
 
     client->addBalance(*amount);
     std::cout << "Balance updated. New balance: " << client->getBalance() << '\n';
@@ -334,8 +342,7 @@ void EventySystem::createEvent(const std::vector<std::string>& arguments) {
     requireAtLeast(arguments, 1, "create-event <type> ...");
 
     Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients can create events.");
+    if (client == nullptr) throw AuthorizationException("Only clients can create events.");
 
     const std::string& type = arguments[0];
     std::unique_ptr<Event> event;
@@ -344,8 +351,7 @@ void EventySystem::createEvent(const std::vector<std::string>& arguments) {
         requireExact(arguments, 6, "create-event ticketed <title> <date> <address> <price> <capacity>");
         double price = nonNegativeDouble(arguments[4], "Price");
         int capacity = positiveInt(arguments[5], "Capacity");
-        if (!utils::isUpcomingDate(arguments[2])) 
-            throw ValidationException("Event date must be valid and not in the past.");
+        if (!utils::isUpcomingDate(arguments[2])) throw ValidationException("Event date must be valid and not in the past.");
 
         event = std::make_unique<TicketedEvent>(
             ids.nextEventId++, arguments[1], arguments[2], arguments[3],
@@ -364,16 +370,15 @@ void EventySystem::createEvent(const std::vector<std::string>& arguments) {
         );
     } else if (type == "volunteer") {
         requireAtLeast(arguments, 5, "create-event volunteer <title> <date> <address> <description>");
-        if (!utils::isUpcomingDate(arguments[2])) 
-            throw ValidationException("Event date must be valid and not in the past.");
+        if (!utils::isUpcomingDate(arguments[2])) throw ValidationException("Event date must be valid and not in the past.");
 
         event = std::make_unique<VolunteerEvent>(
             ids.nextEventId++, arguments[1], arguments[2], arguments[3],
             client->getId(), utils::joinFrom(arguments, 4)
         );
-    } 
-    else
+    } else {
         throw ValidationException("Unknown event type. Use ticketed, seated, or volunteer.");
+    }
 
     const int eventId = event->getId();
     events.add(std::move(event));
@@ -419,8 +424,7 @@ void EventySystem::listUpcomingEvents(const std::vector<std::string>& arguments)
 void EventySystem::listMyEvents(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-my-events");
     const Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients own events.");
+    if (client == nullptr) throw AuthorizationException("Only clients own events.");
 
     auto result = events.ownedBy(client->getId());
     if (result.empty()) {
@@ -439,15 +443,15 @@ void EventySystem::showEventInfo(const std::vector<std::string>& arguments) cons
     int eventId = positiveInt(arguments[0], "Event id");
 
     const Event* event = events.findById(eventId);
-    if (event == nullptr) 
-        throw NotFoundException("Event not found.");
+    if (event == nullptr) throw NotFoundException("Event not found.");
 
     const User* user = currentUser();
     bool privileged = user != nullptr &&
         (dynamic_cast<const Admin*>(user) != nullptr || user->getId() == event->getCreatorId());
 
-    if (!event->isPublished() && !privileged)
+    if (!event->isPublished() && !privileged) {
         throw AuthorizationException("The event is not public.");
+    }
 
     EventInfoVisitor visitor(std::cout);
     event->accept(visitor);
@@ -456,8 +460,7 @@ void EventySystem::showEventInfo(const std::vector<std::string>& arguments) cons
 void EventySystem::showCurrentEventInfo(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "event-info");
     const Event* event = managedEvent();
-    if (event == nullptr) 
-        throw NotFoundException("Managed event not found.");
+    if (event == nullptr) throw NotFoundException("Managed event not found.");
 
     EventInfoVisitor visitor(std::cout);
     event->accept(visitor);
@@ -468,19 +471,18 @@ void EventySystem::showSeating(const std::vector<std::string>& arguments) const 
     int eventId = positiveInt(arguments[0], "Event id");
 
     const Event* base = events.findById(eventId);
-    if (base == nullptr) 
-        throw NotFoundException("Event not found.");
+    if (base == nullptr) throw NotFoundException("Event not found.");
 
     const User* user = currentUser();
     bool privileged = user != nullptr &&
         (dynamic_cast<const Admin*>(user) != nullptr || user->getId() == base->getCreatorId());
 
-    if (!base->isPublished() && !privileged)
+    if (!base->isPublished() && !privileged) {
         throw AuthorizationException("The event is not public.");
+    }
 
     const auto* event = dynamic_cast<const TicketedEvent*>(base);
-    if (event == nullptr) 
-        throw ValidationException("Volunteer events do not have seating.");
+    if (event == nullptr) throw ValidationException("Volunteer events do not have seating.");
 
     event->getSeatingPlan().print(std::cout);
 }
@@ -488,50 +490,51 @@ void EventySystem::showSeating(const std::vector<std::string>& arguments) const 
 void EventySystem::buyTicket(const std::vector<std::string>& arguments) {
     requireAtLeast(arguments, 2, "buy-ticket <event_id> <count> [A1 A2 ...]");
     Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients can buy tickets.");
+    if (client == nullptr) throw AuthorizationException("Only clients can buy tickets.");
 
     int eventId = positiveInt(arguments[0], "Event id");
     int count = positiveInt(arguments[1], "Ticket count");
 
     auto* event = dynamic_cast<TicketedEvent*>(events.findById(eventId));
-    if (event == nullptr) 
-        throw ValidationException("The event does not sell tickets.");
-    if (!event->isPublished() || !utils::isUpcomingDate(event->getDate()))
+    if (event == nullptr) throw ValidationException("The event does not sell tickets.");
+    if (!event->isPublished() || !utils::isUpcomingDate(event->getDate())) {
         throw InvalidStateException("Tickets can be purchased only for an upcoming published event.");
+    }
 
     const double totalPrice = event->priceFor(count);
-    if (client->getBalance() < totalPrice)
+    if (client->getBalance() < totalPrice) {
         throw InvalidStateException("Insufficient balance.");
+    }
 
     std::vector<Seat> selectedSeats;
     if (event->getSeatingPlan().getMode() == SeatingMode::AssignedSeats) {
-        if (arguments.size() != static_cast<std::size_t>(count + 2))
+        if (arguments.size() != static_cast<std::size_t>(count + 2)) {
             throw ValidationException("Provide exactly one seat for every ticket.");
+        }
 
         for (std::size_t index = 2; index < arguments.size(); ++index) {
             auto seat = SeatingPlan::parseSeat(arguments[index]);
-            if (!seat) 
-                throw ValidationException(seat.error());
+            if (!seat) throw ValidationException(seat.error());
             selectedSeats.push_back(*seat);
         }
 
-        if (!event->getSeatingPlan().canReserve(selectedSeats))
+        if (!event->getSeatingPlan().canReserve(selectedSeats)) {
             throw InvalidStateException("At least one selected seat is unavailable.");
-    } 
-    else {
+        }
+    } else {
         requireExact(arguments, 2, "buy-ticket <event_id> <count>");
-        if (!event->getSeatingPlan().canReserve(count))
+        if (!event->getSeatingPlan().canReserve(count)) {
             throw InvalidStateException("Not enough available tickets.");
-
+        }
     }
 
     client->charge(totalPrice);
 
-    if (selectedSeats.empty())
+    if (selectedSeats.empty()) {
         event->reserveGeneral(count);
-    else
+    } else {
         event->reserveSeats(selectedSeats);
+    }
 
     Ticket ticket(ids.nextTicketId++, client->getId(), eventId, event->getTitle(),
                   count, totalPrice, selectedSeats);
@@ -547,8 +550,7 @@ void EventySystem::buyTicket(const std::vector<std::string>& arguments) {
 void EventySystem::listTickets(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-tickets");
     const Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients own tickets.");
+    if (client == nullptr) throw AuthorizationException("Only clients own tickets.");
 
     auto result = tickets.byOwner(client->getId());
     if (result.empty()) {
@@ -556,15 +558,15 @@ void EventySystem::listTickets(const std::vector<std::string>& arguments) const 
         return;
     }
 
-    for (const Ticket* ticket : result)
+    for (const Ticket* ticket : result) {
         std::cout << *ticket << '\n';
+    }
 }
 
 void EventySystem::listHistory(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-history");
     const Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients have participation history.");
+    if (client == nullptr) throw AuthorizationException("Only clients have participation history.");
 
     bool foundPastParticipation = false;
 
@@ -577,29 +579,28 @@ void EventySystem::listHistory(const std::vector<std::string>& arguments) const 
         }
     }
 
-    if (!foundPastParticipation)
+    if (!foundPastParticipation) {
         std::cout << "No past participation history.\n";
+    }
 }
 
 void EventySystem::submitVolunteerApplication(const std::vector<std::string>& arguments) {
     requireAtLeast(arguments, 2, "volunteer-application <event_id> <motivation>");
     Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients can apply as volunteers.");
+    if (client == nullptr) throw AuthorizationException("Only clients can apply as volunteers.");
 
     int eventId = positiveInt(arguments[0], "Event id");
     auto* event = dynamic_cast<VolunteerEvent*>(events.findById(eventId));
 
-    if (event == nullptr) 
-        throw ValidationException("The event is not a volunteer event.");
-    if (!event->isPublished() || !utils::isUpcomingDate(event->getDate()))
+    if (event == nullptr) throw ValidationException("The event is not a volunteer event.");
+    if (!event->isPublished() || !utils::isUpcomingDate(event->getDate())) {
         throw InvalidStateException("Applications are accepted only for upcoming published events.");
-    if (!event->areApplicationsOpen())
-        throw InvalidStateException("Volunteer applications are closed.");
-    if (event->hasParticipant(client->getId()))
-        throw InvalidStateException("You are already a participant.");
-    if (requests.hasPendingVolunteerApplication(client->getId(), eventId))
+    }
+    if (!event->areApplicationsOpen()) throw InvalidStateException("Volunteer applications are closed.");
+    if (event->hasParticipant(client->getId())) throw InvalidStateException("You are already a participant.");
+    if (requests.hasPendingVolunteerApplication(client->getId(), eventId)) {
         throw InvalidStateException("You already have a pending application for this event.");
+    }
 
     requests.add(std::make_unique<VolunteerApplicationRequest>(
         ids.nextRequestId++, client->getId(), eventId, utils::joinFrom(arguments, 1)
@@ -612,8 +613,7 @@ void EventySystem::submitVolunteerApplication(const std::vector<std::string>& ar
 void EventySystem::listNotifications(const std::vector<std::string>& arguments) {
     requireExact(arguments, 0, "list-notifications");
     User* user = currentUser();
-    if (user == nullptr) 
-        throw AuthorizationException("Login is required.");
+    if (user == nullptr) throw AuthorizationException("Login is required.");
 
     if (user->getNotifications().empty()) {
         std::cout << "No notifications.\n";
@@ -629,17 +629,15 @@ void EventySystem::listNotifications(const std::vector<std::string>& arguments) 
 void EventySystem::enterEvent(const std::vector<std::string>& arguments) {
     requireExact(arguments, 1, "enter-event <event_id>");
     Client* client = currentClient();
-    if (client == nullptr) 
-        throw AuthorizationException("Only clients can manage events.");
+    if (client == nullptr) throw AuthorizationException("Only clients can manage events.");
 
     int eventId = positiveInt(arguments[0], "Event id");
     Event* event = events.findById(eventId);
 
-    if (event == nullptr) 
-        throw NotFoundException("Event not found.");
-    
-    if (event->getCreatorId() != client->getId())
+    if (event == nullptr) throw NotFoundException("Event not found.");
+    if (event->getCreatorId() != client->getId()) {
         throw AuthorizationException("Only the creator can manage this event.");
+    }
 
     managedEventId = eventId;
     std::cout << "Entered event management mode for " << event->getTitle() << ".\n";
@@ -654,18 +652,19 @@ void EventySystem::exitEvent(const std::vector<std::string>& arguments) {
 void EventySystem::cancelCurrentEvent(const std::vector<std::string>& arguments) {
     requireAtLeast(arguments, 1, "cancel-event <reason>");
     Event* event = managedEvent();
-    if (event == nullptr) 
-        throw NotFoundException("Managed event not found.");
+    if (event == nullptr) throw NotFoundException("Managed event not found.");
 
     std::string reason = utils::joinFrom(arguments, 0);
     event->cancel(reason);
 
-    if (dynamic_cast<TicketedEvent*>(event) != nullptr)
+    if (dynamic_cast<TicketedEvent*>(event) != nullptr) {
         refundTicketsForCancelledEvent(event->getId(), reason);
+    }
 
     if (auto* volunteer = dynamic_cast<VolunteerEvent*>(event)) {
-        for (int participantId : volunteer->getParticipantIds())
+        for (int participantId : volunteer->getParticipantIds()) {
             notify(participantId, "Event cancelled: " + event->getTitle() + ". Reason: " + reason);
+        }
     }
 
     for (Request* request : requests.pendingVolunteerApplications(event->getId())) {
@@ -675,8 +674,9 @@ void EventySystem::cancelCurrentEvent(const std::vector<std::string>& arguments)
 
     for (const auto& requestPointer : requests.all()) {
         Request& request = *requestPointer;
-        if (request.isPending() && request.isPublishRequest() && request.getEventId() == event->getId())
+        if (request.isPending() && request.isPublishRequest() && request.getEventId() == event->getId()) {
             request.reject("Event cancelled by its creator: " + reason);
+        }
     }
 
     std::cout << "Event cancelled.\n";
@@ -685,8 +685,9 @@ void EventySystem::cancelCurrentEvent(const std::vector<std::string>& arguments)
 void EventySystem::listVolunteerApplications(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-volunteer-applications");
     const Event* event = managedEvent();
-    if (dynamic_cast<const VolunteerEvent*>(event) == nullptr)
+    if (dynamic_cast<const VolunteerEvent*>(event) == nullptr) {
         throw ValidationException("The managed event is not a volunteer event.");
+    }
 
     auto result = requests.pendingVolunteerApplications(event->getId());
     if (result.empty()) {
@@ -694,8 +695,9 @@ void EventySystem::listVolunteerApplications(const std::vector<std::string>& arg
         return;
     }
 
-    for (const Request* request : result)
+    for (const Request* request : result) {
         std::cout << request->summary() << '\n';
+    }
 }
 
 void EventySystem::approveVolunteerApplication(const std::vector<std::string>& arguments) {
@@ -703,21 +705,20 @@ void EventySystem::approveVolunteerApplication(const std::vector<std::string>& a
     int requestId = positiveInt(arguments[0], "Request id");
 
     auto* event = dynamic_cast<VolunteerEvent*>(managedEvent());
-    if (event == nullptr) 
-        throw ValidationException("The managed event is not a volunteer event.");
+    if (event == nullptr) throw ValidationException("The managed event is not a volunteer event.");
 
     Request* request = requests.findById(requestId);
-    if (request == nullptr || !request->isVolunteerApplication() || request->getEventId() != event->getId())
+    if (request == nullptr || !request->isVolunteerApplication() || request->getEventId() != event->getId()) {
         throw NotFoundException("Volunteer application not found for this event.");
-        
-    if (!request->isPending()) 
-        throw InvalidStateException("The application has already been processed.");
+    }
+    if (!request->isPending()) throw InvalidStateException("The application has already been processed.");
 
     event->addParticipant(request->getRequesterId());
     request->approve();
 
-    if (Client* client = dynamic_cast<Client*>(users.findById(request->getRequesterId())))
+    if (Client* client = dynamic_cast<Client*>(users.findById(request->getRequesterId()))) {
         client->addHistoryEvent(event->getId());
+    }
 
     notify(request->getRequesterId(), "Volunteer application approved for event: " + event->getTitle());
     std::cout << "Volunteer application approved.\n";
@@ -728,12 +729,12 @@ void EventySystem::rejectVolunteerApplication(const std::vector<std::string>& ar
     int requestId = positiveInt(arguments[0], "Request id");
 
     const auto* event = dynamic_cast<const VolunteerEvent*>(managedEvent());
-    if (event == nullptr) 
-        throw ValidationException("The managed event is not a volunteer event.");
+    if (event == nullptr) throw ValidationException("The managed event is not a volunteer event.");
 
     Request* request = requests.findById(requestId);
-    if (request == nullptr || !request->isVolunteerApplication() || request->getEventId() != event->getId())
+    if (request == nullptr || !request->isVolunteerApplication() || request->getEventId() != event->getId()) {
         throw NotFoundException("Volunteer application not found for this event.");
+    }
 
     std::string reason = arguments.size() > 1
         ? utils::joinFrom(arguments, 1)
@@ -747,8 +748,7 @@ void EventySystem::rejectVolunteerApplication(const std::vector<std::string>& ar
 void EventySystem::closeVolunteerApplications(const std::vector<std::string>& arguments) {
     requireExact(arguments, 0, "close-volunteer-applications");
     auto* event = dynamic_cast<VolunteerEvent*>(managedEvent());
-    if (event == nullptr) 
-        throw ValidationException("The managed event is not a volunteer event.");
+    if (event == nullptr) throw ValidationException("The managed event is not a volunteer event.");
 
     event->closeApplications();
     std::cout << "Volunteer applications closed.\n";
@@ -757,16 +757,16 @@ void EventySystem::closeVolunteerApplications(const std::vector<std::string>& ar
 void EventySystem::listParticipants(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-participants");
     const Event* event = managedEvent();
-    if (event == nullptr) 
-        throw NotFoundException("Managed event not found.");
+    if (event == nullptr) throw NotFoundException("Managed event not found.");
 
     std::set<int> participantIds;
 
-    if (const auto* volunteer = dynamic_cast<const VolunteerEvent*>(event))
+    if (const auto* volunteer = dynamic_cast<const VolunteerEvent*>(event)) {
         participantIds.insert(volunteer->getParticipantIds().begin(), volunteer->getParticipantIds().end());
-    else {
-        for (const Ticket* ticket : tickets.byEvent(event->getId()))
+    } else {
+        for (const Ticket* ticket : tickets.byEvent(event->getId())) {
             participantIds.insert(ticket->getOwnerId());
+        }
     }
 
     if (participantIds.empty()) {
@@ -776,15 +776,13 @@ void EventySystem::listParticipants(const std::vector<std::string>& arguments) c
 
     for (int id : participantIds) {
         const User* user = users.findById(id);
-        if (user != nullptr) 
-            std::cout << '[' << id << "] " << user->getUsername() << '\n';
+        if (user != nullptr) std::cout << '[' << id << "] " << user->getUsername() << '\n';
     }
 }
 
 void EventySystem::listPublishRequests(const std::vector<std::string>& arguments) const {
     requireExact(arguments, 0, "list-requests");
-    if (currentAdmin() == nullptr) 
-        throw AuthorizationException("Only the administrator can view publication requests.");
+    if (currentAdmin() == nullptr) throw AuthorizationException("Only the administrator can view publication requests.");
 
     auto result = requests.pendingPublishRequests();
     if (result.empty()) {
@@ -792,24 +790,24 @@ void EventySystem::listPublishRequests(const std::vector<std::string>& arguments
         return;
     }
 
-    for (const Request* request : result)
+    for (const Request* request : result) {
         std::cout << request->summary() << '\n';
+    }
 }
 
 void EventySystem::approvePublishRequest(const std::vector<std::string>& arguments) {
     requireExact(arguments, 1, "approve-request <request_id>");
     Admin* admin = currentAdmin();
-    if (admin == nullptr) 
-        throw AuthorizationException("Only the administrator can approve publication requests.");
+    if (admin == nullptr) throw AuthorizationException("Only the administrator can approve publication requests.");
 
     int requestId = positiveInt(arguments[0], "Request id");
     Request* request = requests.findById(requestId);
-    if (request == nullptr || !request->isPublishRequest())
+    if (request == nullptr || !request->isPublishRequest()) {
         throw NotFoundException("Publication request not found.");
+    }
 
     Event* event = events.findById(request->getEventId());
-    if (event == nullptr) 
-        throw NotFoundException("The related event was not found.");
+    if (event == nullptr) throw NotFoundException("The related event was not found.");
 
     admin->approvePublishRequest(*request, *event);
     notify(request->getRequesterId(), "Event approved and published: " + event->getTitle());
@@ -819,17 +817,16 @@ void EventySystem::approvePublishRequest(const std::vector<std::string>& argumen
 void EventySystem::rejectPublishRequest(const std::vector<std::string>& arguments) {
     requireAtLeast(arguments, 2, "reject-request <request_id> <reason>");
     Admin* admin = currentAdmin();
-    if (admin == nullptr) 
-        throw AuthorizationException("Only the administrator can reject publication requests.");
+    if (admin == nullptr) throw AuthorizationException("Only the administrator can reject publication requests.");
 
     int requestId = positiveInt(arguments[0], "Request id");
     Request* request = requests.findById(requestId);
-    if (request == nullptr || !request->isPublishRequest())
+    if (request == nullptr || !request->isPublishRequest()) {
         throw NotFoundException("Publication request not found.");
+    }
 
     Event* event = events.findById(request->getEventId());
-    if (event == nullptr) 
-        throw NotFoundException("The related event was not found.");
+    if (event == nullptr) throw NotFoundException("The related event was not found.");
 
     std::string reason = utils::joinFrom(arguments, 1);
     admin->rejectPublishRequest(*request, *event, reason);
@@ -842,8 +839,7 @@ void EventySystem::refundTicketsForCancelledEvent(int eventId, const std::string
 
     for (const Ticket& ticket : refundedTickets) {
         Client* owner = dynamic_cast<Client*>(users.findById(ticket.getOwnerId()));
-        if (owner == nullptr) 
-            continue;
+        if (owner == nullptr) continue;
 
         owner->refund(ticket.getTotalPrice());
         owner->removeTicket(ticket.getId());
