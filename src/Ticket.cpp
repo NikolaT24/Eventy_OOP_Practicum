@@ -1,4 +1,5 @@
 #include "Ticket.h"
+
 #include "EventyException.h"
 
 Ticket::Ticket(int id, int ownerId, int eventId, std::string eventTitle,
@@ -10,10 +11,13 @@ Ticket::Ticket(int id, int ownerId, int eventId, std::string eventTitle,
       count(count),
       totalPrice(totalPrice),
       seats(std::move(seats)) {
-    if (id <= 0 || ownerId <= 0 || eventId <= 0 || count <= 0 || totalPrice < 0)
+    if (id <= 0 || ownerId <= 0 || eventId <= 0 || count <= 0 || totalPrice < 0) {
         throw ValidationException("Ticket data is invalid.");
-    if (!this->seats.empty() && static_cast<int>(this->seats.size()) != count)
+    }
+
+    if (!this->seats.empty() && static_cast<int>(this->seats.size()) != count) {
         throw ValidationException("Seat count does not match ticket count.");
+    }
 }
 
 int Ticket::getId() const {
@@ -63,8 +67,9 @@ std::ostream& operator<<(std::ostream& output, const Ticket& ticket) {
            << " | count: " << ticket.count
            << " | paid: " << ticket.totalPrice;
 
-    if (!ticket.seats.empty())
+    if (!ticket.seats.empty()) {
         output << " | seats: " << SeatingPlan::encodeSeats(ticket.seats);
+    }
 
     return output;
 }
