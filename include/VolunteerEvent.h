@@ -12,7 +12,12 @@ private:
     std::vector<int> participantIds;
 
 public:
-    VolunteerEvent(int id, std::string title, std::string date, std::string address,int creatorId, std::string description,EventStatus status = EventStatus::Pending, bool applicationsOpen = true, std::vector<int> participantIds = {}, std::string cancellationReason = "");
+    VolunteerEvent(int id, std::string title, std::string date, std::string address,
+                   int creatorId, std::string description,
+                   EventStatus status = EventStatus::Pending,
+                   bool applicationsOpen = true,
+                   std::vector<int> participantIds = {},
+                   std::string cancellationReason = "");
 
     const std::string& getDescription() const;
     bool areApplicationsOpen() const;
