@@ -1,7 +1,5 @@
 #include "Client.h"
-
 #include <algorithm>
-
 #include "EventyException.h"
 
 Client::Client(int id, std::string username, std::string password,
