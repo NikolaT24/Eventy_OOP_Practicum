@@ -1,20 +1,18 @@
 #include "EntityFactory.h"
 #include "Admin.h"
 #include "Client.h"
-#include "TicketEvent.h"
+#include "TicketedEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
 namespace {
     std::vector<int> parseIds(const std::string& value) {
         std::vector<int> result;
-        if (value.empty()) 
-          return result;
+        if (value.empty()) return result;
 
         for (const std::string& part : utils::split(value, ',')) {
             auto id = utils::toInt(part);
-            if (id) 
-              result.push_back(*id);
+            if (id) result.push_back(*id);
         }
 
         return result;
@@ -24,9 +22,10 @@ namespace {
 std::expected<std::unique_ptr<User>, std::string>
 EntityFactory::userFromRecord(const std::vector<std::string>& parts) {
     try {
-        if (parts.size() < 6 || parts[0] != "USER")
+        if (parts.size() < 6 || parts[0] != "USER") {
             return std::unexpected("Invalid user record.");
-          
+        }
+
         auto id = utils::toInt(parts[2]);
         if (!id) return std::unexpected(id.error());
 
@@ -59,19 +58,17 @@ EntityFactory::userFromRecord(const std::vector<std::string>& parts) {
 std::expected<std::unique_ptr<Event>, std::string>
 EntityFactory::eventFromRecord(const std::vector<std::string>& parts) {
     try {
-        if (parts.size() < 10 || parts[0] != "EVENT")
+        if (parts.size() < 10 || parts[0] != "EVENT") {
             return std::unexpected("Invalid event record.");
+        }
 
         auto id = utils::toInt(parts[2]);
         auto creatorId = utils::toInt(parts[6]);
         auto status = eventStatusFromString(parts[7]);
 
-        if (!id) 
-          return std::unexpected(id.error());
-        if (!creatorId) 
-          return std::unexpected(creatorId.error());
-        if (!status) 
-          return std::unexpected(status.error());
+        if (!id) return std::unexpected(id.error());
+        if (!creatorId) return std::unexpected(creatorId.error());
+        if (!status) return std::unexpected(status.error());
 
         if (parts[1] == "TICKETED") {
             if (parts.size() != 16) return std::unexpected("Invalid ticketed event record.");
@@ -83,18 +80,12 @@ EntityFactory::eventFromRecord(const std::vector<std::string>& parts) {
             auto columns = utils::toInt(parts[13]);
             auto sold = utils::toInt(parts[14]);
 
-            if (!price) 
-              return std::unexpected(price.error());
-            if (!mode) 
-              return std::unexpected(mode.error());
-            if (!capacity) 
-              return std::unexpected(capacity.error());
-            if (!rows) 
-              return std::unexpected(rows.error());
-            if (!columns) 
-              return std::unexpected(columns.error());
-            if (!sold) 
-              return std::unexpected(sold.error());
+            if (!price) return std::unexpected(price.error());
+            if (!mode) return std::unexpected(mode.error());
+            if (!capacity) return std::unexpected(capacity.error());
+            if (!rows) return std::unexpected(rows.error());
+            if (!columns) return std::unexpected(columns.error());
+            if (!sold) return std::unexpected(sold.error());
 
             SeatingPlan seating = SeatingPlan::restore(
                 *mode, *capacity, *rows, *columns, *sold,
@@ -125,22 +116,19 @@ EntityFactory::eventFromRecord(const std::vector<std::string>& parts) {
 std::expected<std::unique_ptr<Request>, std::string>
 EntityFactory::requestFromRecord(const std::vector<std::string>& parts) {
     try {
-        if (parts.size() < 7 || parts[0] != "REQUEST")
+        if (parts.size() < 7 || parts[0] != "REQUEST") {
             return std::unexpected("Invalid request record.");
+        }
 
         auto id = utils::toInt(parts[2]);
         auto requesterId = utils::toInt(parts[3]);
         auto eventId = utils::toInt(parts[4]);
         auto status = requestStatusFromString(parts[5]);
 
-        if (!id) 
-          return std::unexpected(id.error());
-        if (!requesterId) 
-          return std::unexpected(requesterId.error());
-        if (!eventId) 
-          return std::unexpected(eventId.error());
-        if (!status) 
-          return std::unexpected(status.error());
+        if (!id) return std::unexpected(id.error());
+        if (!requesterId) return std::unexpected(requesterId.error());
+        if (!eventId) return std::unexpected(eventId.error());
+        if (!status) return std::unexpected(status.error());
 
         if (parts[1] == "PUBLISH") {
             if (parts.size() != 7) return std::unexpected("Invalid publish request record.");
@@ -167,8 +155,9 @@ EntityFactory::requestFromRecord(const std::vector<std::string>& parts) {
 std::expected<Ticket, std::string>
 EntityFactory::ticketFromRecord(const std::vector<std::string>& parts) {
     try {
-        if (parts.size() != 8 || parts[0] != "TICKET")
+        if (parts.size() != 8 || parts[0] != "TICKET") {
             return std::unexpected("Invalid ticket record.");
+        }
 
         auto id = utils::toInt(parts[1]);
         auto ownerId = utils::toInt(parts[2]);
