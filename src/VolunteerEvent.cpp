@@ -14,8 +14,9 @@ VolunteerEvent::VolunteerEvent(int id, std::string title, std::string date, std:
       description(std::move(description)),
       applicationsOpen(applicationsOpen),
       participantIds(std::move(participantIds)) {
-    if (utils::trim(this->description).empty())
+    if (utils::trim(this->description).empty()) {
         throw ValidationException("Volunteer activity description is required.");
+    }
 }
 
 const std::string& VolunteerEvent::getDescription() const {
@@ -35,21 +36,25 @@ bool VolunteerEvent::hasParticipant(int clientId) const {
 }
 
 void VolunteerEvent::addParticipant(int clientId) {
-    if (!isPublished() || isCancelled())
+    if (!isPublished() || isCancelled()) {
         throw InvalidStateException("Volunteers can be approved only for a published event.");
+    }
 
-    if (hasParticipant(clientId))
+    if (hasParticipant(clientId)) {
         throw InvalidStateException("The client is already a participant.");
+    }
 
     participantIds.push_back(clientId);
 }
 
 void VolunteerEvent::closeApplications() {
-    if (!isPublished() || isCancelled() || !utils::isUpcomingDate(getDate()))
+    if (!isPublished() || isCancelled() || !utils::isUpcomingDate(getDate())) {
         throw InvalidStateException("Applications can be closed only for an upcoming published event.");
+    }
 
-    if (!applicationsOpen)
+    if (!applicationsOpen) {
         throw InvalidStateException("Volunteer applications are already closed.");
+    }
 
     applicationsOpen = false;
 }
