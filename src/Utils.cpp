@@ -12,12 +12,15 @@ namespace {
         result.reserve(value.size());
 
         for (char symbol : value) {
-            if (symbol == '\\' || symbol == delimiter || symbol == '\n')
+            if (symbol == '\\' || symbol == delimiter || symbol == '\n') {
                 result.push_back('\\');
-            if (symbol == '\n')
+            }
+
+            if (symbol == '\n') {
                 result.push_back('n');
-            else
+            } else {
                 result.push_back(symbol);
+            }
         }
 
         return result;
@@ -33,8 +36,7 @@ std::string utils::trim(const std::string& value) {
         return std::isspace(symbol) != 0;
     }).base();
 
-    if (first >= last) 
-      return "";
+    if (first >= last) return "";
     return std::string(first, last);
 }
 
@@ -43,11 +45,13 @@ std::vector<std::string> utils::split(const std::string& value, char delimiter) 
     std::stringstream stream(value);
     std::string current;
 
-    while (std::getline(stream, current, delimiter))
+    while (std::getline(stream, current, delimiter)) {
         result.push_back(current);
+    }
 
-    if (!value.empty() && value.back() == delimiter)
+    if (!value.empty() && value.back() == delimiter) {
         result.emplace_back();
+    }
 
     return result;
 }
@@ -56,8 +60,7 @@ std::string utils::join(const std::vector<std::string>& values, char delimiter) 
     std::ostringstream output;
 
     for (std::size_t index = 0; index < values.size(); ++index) {
-        if (index > 0) 
-          output << delimiter;
+        if (index > 0) output << delimiter;
         output << values[index];
     }
 
@@ -90,8 +93,7 @@ std::vector<std::string> utils::splitEscaped(const std::string& value, char deli
         current.push_back(symbol);
     }
 
-    if (escaped) 
-      current.push_back('\\');
+    if (escaped) current.push_back('\\');
     result.push_back(current);
     return result;
 }
@@ -100,8 +102,7 @@ std::string utils::joinEscaped(const std::vector<std::string>& values, char deli
     std::ostringstream output;
 
     for (std::size_t index = 0; index < values.size(); ++index) {
-        if (index > 0) 
-          output << delimiter;
+        if (index > 0) output << delimiter;
         output << escapeField(values[index], delimiter);
     }
 
@@ -109,14 +110,12 @@ std::string utils::joinEscaped(const std::vector<std::string>& values, char deli
 }
 
 std::string utils::joinFrom(const std::vector<std::string>& values, std::size_t startIndex, char separator) {
-    if (startIndex >= values.size()) 
-      return "";
+    if (startIndex >= values.size()) return "";
 
     std::ostringstream output;
 
     for (std::size_t index = startIndex; index < values.size(); ++index) {
-        if (index > startIndex) 
-          output << separator;
+        if (index > startIndex) output << separator;
         output << values[index];
     }
 
@@ -128,8 +127,9 @@ std::expected<int, std::string> utils::toInt(const std::string& value) {
         std::size_t consumed = 0;
         int result = std::stoi(value, &consumed);
 
-        if (consumed != value.size())
+        if (consumed != value.size()) {
             return std::unexpected("Invalid integer: " + value);
+        }
 
         return result;
     } catch (const std::exception&) {
@@ -142,8 +142,9 @@ std::expected<double, std::string> utils::toDouble(const std::string& value) {
         std::size_t consumed = 0;
         double result = std::stod(value, &consumed);
 
-        if (consumed != value.size())
+        if (consumed != value.size()) {
             return std::unexpected("Invalid number: " + value);
+        }
 
         return result;
     } catch (const std::exception&) {
@@ -152,24 +153,20 @@ std::expected<double, std::string> utils::toDouble(const std::string& value) {
 }
 
 bool utils::isValidDate(const std::string& value) {
-    if (value.size() != 10 || value[4] != '-' || value[7] != '-') 
-      return false;
+    if (value.size() != 10 || value[4] != '-' || value[7] != '-') return false;
 
     auto year = toInt(value.substr(0, 4));
     auto month = toInt(value.substr(5, 2));
     auto day = toInt(value.substr(8, 2));
 
-    if (!year || !month || !day) 
-      return false;
-    if (*month < 1 || *month > 12 || *day < 1) 
-      return false;
+    if (!year || !month || !day) return false;
+    if (*month < 1 || *month > 12 || *day < 1) return false;
 
     static const int daysInMonth[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     int maximum = daysInMonth[*month - 1];
 
     bool leap = (*year % 400 == 0) || (*year % 4 == 0 && *year % 100 != 0);
-    if (*month == 2 && leap) 
-      maximum = 29;
+    if (*month == 2 && leap) maximum = 29;
 
     return *day <= maximum;
 }
