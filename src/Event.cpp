@@ -1,5 +1,4 @@
 #include "Event.h"
-
 #include "EventyException.h"
 #include "Utils.h"
 
