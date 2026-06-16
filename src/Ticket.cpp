@@ -1,5 +1,4 @@
 #include "Ticket.h"
-
 #include "EventyException.h"
 
 Ticket::Ticket(int id, int ownerId, int eventId, std::string eventTitle,
