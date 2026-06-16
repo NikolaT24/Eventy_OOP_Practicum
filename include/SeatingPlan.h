@@ -17,12 +17,14 @@ private:
     int columns;
     int soldCount;
     std::vector<Seat> occupiedSeats;
+
     bool contains(const Seat& seat) const;
 
 public:
     static SeatingPlan generalAdmission(int capacity);
     static SeatingPlan assignedSeats(int rows, int columns);
-    static SeatingPlan restore(SeatingMode mode, int capacity, int rows, int columns, int soldCount, std::vector<Seat> occupiedSeats);
+    static SeatingPlan restore(SeatingMode mode, int capacity, int rows, int columns,
+                               int soldCount, std::vector<Seat> occupiedSeats);
 
     SeatingMode getMode() const;
     int getCapacity() const;
@@ -39,6 +41,7 @@ public:
 
     void reserve(int count);
     void reserve(const std::vector<Seat>& seats);
+
     void print(std::ostream& output) const;
 
     static std::expected<Seat, std::string> parseSeat(const std::string& value);
@@ -47,5 +50,6 @@ public:
     static std::vector<Seat> decodeSeats(const std::string& value);
 
 private:
-    SeatingPlan(SeatingMode mode, int capacity, int rows, int columns, int soldCount, std::vector<Seat> occupiedSeats);
+    SeatingPlan(SeatingMode mode, int capacity, int rows, int columns,
+                int soldCount, std::vector<Seat> occupiedSeats);
 };
