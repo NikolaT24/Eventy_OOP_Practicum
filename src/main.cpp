@@ -8,5 +8,6 @@ int main() {
         std::cerr << "Fatal error: " << error.what() << '\n';
         return 1;
     }
+
     return 0;
 }
