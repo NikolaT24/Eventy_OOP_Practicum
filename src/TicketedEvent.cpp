@@ -1,4 +1,4 @@
-#include "TicketEvent.h"
+#include "TicketedEvent.h"
 #include "EventVisitor.h"
 #include "EventyException.h"
 
@@ -9,8 +9,9 @@ TicketedEvent::TicketedEvent(int id, std::string title, std::string date, std::s
             status, std::move(cancellationReason)),
       ticketPrice(ticketPrice),
       seatingPlan(std::move(seatingPlan)) {
-    if (ticketPrice < 0)
+    if (ticketPrice < 0) {
         throw ValidationException("Ticket price cannot be negative.");
+    }
 }
 
 double TicketedEvent::getTicketPrice() const {
@@ -26,22 +27,25 @@ SeatingPlan& TicketedEvent::getSeatingPlan() {
 }
 
 double TicketedEvent::priceFor(int count) const {
-    if (count <= 0)
+    if (count <= 0) {
         throw ValidationException("Ticket count must be positive.");
+    }
 
     return ticketPrice * count;
 }
 
 void TicketedEvent::reserveGeneral(int count) {
-    if (!isPublished())
+    if (!isPublished()) {
         throw InvalidStateException("Tickets can be purchased only for a published event.");
+    }
 
     seatingPlan.reserve(count);
 }
 
 void TicketedEvent::reserveSeats(const std::vector<Seat>& seats) {
-    if (!isPublished())
+    if (!isPublished()) {
         throw InvalidStateException("Tickets can be purchased only for a published event.");
+    }
 
     seatingPlan.reserve(seats);
 }
