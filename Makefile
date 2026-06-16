@@ -1,22 +1,63 @@
-CXX := g++
-CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Iinclude
+CXX ?= g++
 
 TARGET := eventy
-SOURCES := $(wildcard src/*.cpp)
-OBJECTS := $(SOURCES:.cpp=.o)
+SRC_DIR := src
+INC_DIR := include
+BUILD_DIR := build
 
-.PHONY: all clean run
+BASE_CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic
+CPPFLAGS ?=
+CPPFLAGS += -I$(INC_DIR)
+CXXFLAGS ?= $(BASE_CXXFLAGS)
+LDFLAGS ?=
+LDLIBS ?=
+
+SOURCES := $(sort $(wildcard $(SRC_DIR)/*.cpp))
+OBJECTS := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(SOURCES))
+DEPENDENCIES := $(OBJECTS:.o=.d)
+
+.PHONY: all run clean rebuild debug release sanitize help
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
+	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-src/%.o: src/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 run: $(TARGET)
 	./$(TARGET)
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) eventy.exe
+	$(RM) -r $(BUILD_DIR) $(TARGET) $(TARGET).exe
+
+rebuild: clean all
+
+debug:
+	$(MAKE) clean
+	$(MAKE) CXXFLAGS="$(BASE_CXXFLAGS) -O0 -g3" all
+
+release:
+	$(MAKE) clean
+	$(MAKE) CXXFLAGS="$(BASE_CXXFLAGS) -O2 -DNDEBUG" all
+
+sanitize:
+	$(MAKE) clean
+	$(MAKE) \
+		CXXFLAGS="$(BASE_CXXFLAGS) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer" \
+		LDFLAGS="$(LDFLAGS) -fsanitize=address,undefined" \
+		all
+
+help:
+	@printf '%s\n' \
+		'make           Build the application' \
+		'make run       Build and run the application' \
+		'make debug     Rebuild with debug symbols' \
+		'make release   Rebuild with optimizations' \
+		'make sanitize  Rebuild with AddressSanitizer and UBSan' \
+		'make clean     Remove generated build files' \
+		'make rebuild   Clean and build again'
+
+-include $(DEPENDENCIES)
