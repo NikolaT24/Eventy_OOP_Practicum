@@ -1,5 +1,28 @@
 * text=auto
+
 *.cpp text eol=lf
+*.cc text eol=lf
+*.cxx text eol=lf
 *.h text eol=lf
-*.md text eol=lf
+*.hh text eol=lf
+*.hpp text eol=lf
+*.ipp text eol=lf
 Makefile text eol=lf
+*.mk text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
