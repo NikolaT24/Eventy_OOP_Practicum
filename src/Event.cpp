@@ -1,4 +1,5 @@
 #include "Event.h"
+
 #include "EventyException.h"
 #include "Utils.h"
 
@@ -11,11 +12,13 @@ Event::Event(int id, std::string title, std::string date, std::string address,
       creatorId(creatorId),
       status(status),
       cancellationReason(std::move(cancellationReason)) {
-    if (id <= 0 || creatorId <= 0)
+    if (id <= 0 || creatorId <= 0) {
         throw ValidationException("Event and creator ids must be positive.");
+    }
 
-    if (this->title.empty() || this->address.empty() || !utils::isValidDate(this->date))
+    if (this->title.empty() || this->address.empty() || !utils::isValidDate(this->date)) {
         throw ValidationException("Event title, date, or address is invalid.");
+    }
 }
 
 int Event::getId() const {
@@ -59,18 +62,21 @@ bool Event::isCancelled() const {
 }
 
 void Event::publish() {
-    if (!isPending())
+    if (!isPending()) {
         throw InvalidStateException("Only a pending event can be published.");
+    }
 
     status = EventStatus::Published;
 }
 
 void Event::cancel(const std::string& reason) {
-    if (isCancelled())
+    if (isCancelled()) {
         throw InvalidStateException("The event is already cancelled.");
+    }
 
-    if (utils::trim(reason).empty())
+    if (utils::trim(reason).empty()) {
         throw ValidationException("A cancellation reason is required.");
+    }
 
     status = EventStatus::Cancelled;
     cancellationReason = utils::trim(reason);
