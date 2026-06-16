@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <vector>
-
 #include "Event.h"
 #include "SeatingPlan.h"
 
@@ -12,7 +11,10 @@ private:
     SeatingPlan seatingPlan;
 
 public:
-    TicketedEvent(int id, std::string title, std::string date, std::string address, int creatorId, double ticketPrice, SeatingPlan seatingPlan, EventStatus status = EventStatus::Pending, std::string cancellationReason = "");
+    TicketedEvent(int id, std::string title, std::string date, std::string address,
+                  int creatorId, double ticketPrice, SeatingPlan seatingPlan,
+                  EventStatus status = EventStatus::Pending,
+                  std::string cancellationReason = "");
 
     double getTicketPrice() const;
     const SeatingPlan& getSeatingPlan() const;
