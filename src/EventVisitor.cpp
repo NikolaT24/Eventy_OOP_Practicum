@@ -1,5 +1,5 @@
 #include "EventVisitor.h"
-#include "TicketEvent.h"
+#include "TicketedEvent.h"
 #include "Utils.h"
 #include "VolunteerEvent.h"
 
@@ -30,8 +30,9 @@ void EventInfoVisitor::visit(const TicketedEvent& event) {
            << "\nAvailable: " << event.getSeatingPlan().getAvailableCount()
            << "\nSeating mode: " << toString(event.getSeatingPlan().getMode()) << '\n';
 
-    if (event.isCancelled())
+    if (event.isCancelled()) {
         output << "Cancellation reason: " << event.getCancellationReason() << '\n';
+    }
 }
 
 void EventInfoVisitor::visit(const VolunteerEvent& event) {
@@ -41,8 +42,9 @@ void EventInfoVisitor::visit(const VolunteerEvent& event) {
            << "\nApplications: " << (event.areApplicationsOpen() ? "OPEN" : "CLOSED")
            << "\nParticipants: " << event.getParticipantIds().size() << '\n';
 
-    if (event.isCancelled())
+    if (event.isCancelled()) {
         output << "Cancellation reason: " << event.getCancellationReason() << '\n';
+    }
 }
 
 void EventRecordVisitor::visit(const TicketedEvent& event) {
@@ -62,12 +64,12 @@ void EventRecordVisitor::visit(const VolunteerEvent& event) {
     record.push_back(event.areApplicationsOpen() ? "1" : "0");
 
     std::vector<std::string> participants;
-    for (int id : event.getParticipantIds())
+    for (int id : event.getParticipantIds()) {
         participants.push_back(std::to_string(id));
+    }
     record.push_back(utils::join(participants, ','));
 }
 
 const std::vector<std::string>& EventRecordVisitor::getRecord() const {
     return record;
 }
-
