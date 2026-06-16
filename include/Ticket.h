@@ -16,7 +16,8 @@ private:
     std::vector<Seat> seats;
 
 public:
-    Ticket(int id, int ownerId, int eventId, std::string eventTitle, int count, double totalPrice, std::vector<Seat> seats = {});
+    Ticket(int id, int ownerId, int eventId, std::string eventTitle,
+           int count, double totalPrice, std::vector<Seat> seats = {});
 
     int getId() const;
     int getOwnerId() const;
@@ -25,6 +26,7 @@ public:
     int getCount() const;
     double getTotalPrice() const;
     const std::vector<Seat>& getSeats() const;
+
     std::vector<std::string> toRecord() const;
 
     friend std::ostream& operator<<(std::ostream& output, const Ticket& ticket);
