@@ -1,20 +1,29 @@
 #include "Client.h"
+
 #include <algorithm>
+
 #include "EventyException.h"
 
-Client::Client(int id, std::string username, std::string password, double balance, std::vector<int> ticketIds, std::vector<int> historyEventIds, std::vector<int> createdEventIds, std::vector<Notification> notifications)
+Client::Client(int id, std::string username, std::string password,
+               double balance,
+               std::vector<int> ticketIds,
+               std::vector<int> historyEventIds,
+               std::vector<int> createdEventIds,
+               std::vector<Notification> notifications)
     : User(id, std::move(username), std::move(password), std::move(notifications)),
       balance(balance),
       ticketIds(std::move(ticketIds)),
       historyEventIds(std::move(historyEventIds)),
       createdEventIds(std::move(createdEventIds)) {
-    if (balance < 0)
+    if (balance < 0) {
         throw ValidationException("Client balance cannot be negative.");
+    }
 }
 
 void Client::addUnique(std::vector<int>& values, int value) {
-    if (std::find(values.begin(), values.end(), value) == values.end())
+    if (std::find(values.begin(), values.end(), value) == values.end()) {
         values.push_back(value);
+    }
 }
 
 UserRole Client::getRole() const {
@@ -42,22 +51,30 @@ const std::vector<int>& Client::getCreatedEventIds() const {
 }
 
 void Client::addBalance(double amount) {
-    if (amount <= 0)
+    if (amount <= 0) {
         throw ValidationException("Balance amount must be positive.");
+    }
+
     balance += amount;
 }
 
 void Client::charge(double amount) {
-    if (amount < 0)
+    if (amount < 0) {
         throw ValidationException("Charge amount cannot be negative.");
-    if (balance < amount)
+    }
+
+    if (balance < amount) {
         throw InvalidStateException("Insufficient balance.");
+    }
+
     balance -= amount;
 }
 
 void Client::refund(double amount) {
-    if (amount < 0)
+    if (amount < 0) {
         throw ValidationException("Refund amount cannot be negative.");
+    }
+
     balance += amount;
 }
 
