@@ -9,8 +9,9 @@ Request::Request(int id, int requesterId, int eventId,
       eventId(eventId),
       status(status),
       rejectionReason(std::move(rejectionReason)) {
-    if (id <= 0 || requesterId <= 0 || eventId <= 0)
+    if (id <= 0 || requesterId <= 0 || eventId <= 0) {
         throw ValidationException("Request ids must be positive.");
+    }
 }
 
 std::vector<std::string> Request::baseRecord(const std::string& type) const {
@@ -50,17 +51,21 @@ bool Request::isPending() const {
 }
 
 void Request::approve() {
-    if (!isPending())
+    if (!isPending()) {
         throw InvalidStateException("The request has already been processed.");
+    }
 
     status = RequestStatus::Approved;
 }
 
 void Request::reject(const std::string& reason) {
-    if (!isPending())
+    if (!isPending()) {
         throw InvalidStateException("The request has already been processed.");
-    if (utils::trim(reason).empty())
+    }
+
+    if (utils::trim(reason).empty()) {
         throw ValidationException("A rejection reason is required.");
+    }
 
     status = RequestStatus::Rejected;
     rejectionReason = utils::trim(reason);
@@ -98,8 +103,9 @@ VolunteerApplicationRequest::VolunteerApplicationRequest(
     RequestStatus status, std::string rejectionReason)
     : Request(id, requesterId, eventId, status, std::move(rejectionReason)),
       motivation(std::move(motivation)) {
-    if (utils::trim(this->motivation).empty())
+    if (utils::trim(this->motivation).empty()) {
         throw ValidationException("Volunteer motivation is required.");
+    }
 }
 
 const std::string& VolunteerApplicationRequest::getMotivation() const {
