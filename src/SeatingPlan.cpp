@@ -16,23 +16,26 @@ SeatingPlan::SeatingPlan(SeatingMode mode, int capacity, int rows, int columns,
       occupiedSeats(std::move(occupiedSeats)) {}
 
 SeatingPlan SeatingPlan::generalAdmission(int capacity) {
-    if (capacity <= 0)
+    if (capacity <= 0) {
         throw ValidationException("Capacity must be positive.");
+    }
 
     return SeatingPlan(SeatingMode::GeneralAdmission, capacity, 0, 0, 0, {});
 }
 
 SeatingPlan SeatingPlan::assignedSeats(int rows, int columns) {
-    if (rows <= 0 || columns <= 0 || rows > 26)
+    if (rows <= 0 || columns <= 0 || rows > 26) {
         throw ValidationException("Rows must be between 1 and 26 and columns must be positive.");
-        
+    }
+
     return SeatingPlan(SeatingMode::AssignedSeats, rows * columns, rows, columns, 0, {});
 }
 
 SeatingPlan SeatingPlan::restore(SeatingMode mode, int capacity, int rows, int columns,
                                  int soldCount, std::vector<Seat> occupiedSeats) {
-    if (capacity < 0 || rows < 0 || columns < 0 || soldCount < 0)
+    if (capacity < 0 || rows < 0 || columns < 0 || soldCount < 0) {
         throw ValidationException("Stored seating data contains negative values.");
+    }
 
     return SeatingPlan(mode, capacity, rows, columns, soldCount, std::move(occupiedSeats));
 }
@@ -84,16 +87,13 @@ bool SeatingPlan::canReserve(int count) const {
 }
 
 bool SeatingPlan::canReserve(const std::vector<Seat>& seats) const {
-    if (mode != SeatingMode::AssignedSeats || seats.empty()) 
-        return false;
+    if (mode != SeatingMode::AssignedSeats || seats.empty()) return false;
 
     std::vector<Seat> uniqueSeats;
 
     for (const Seat& seat : seats) {
-        if (!isFree(seat)) 
-            return false;
-        if (std::find(uniqueSeats.begin(), uniqueSeats.end(), seat) != uniqueSeats.end()) 
-            return false;
+        if (!isFree(seat)) return false;
+        if (std::find(uniqueSeats.begin(), uniqueSeats.end(), seat) != uniqueSeats.end()) return false;
         uniqueSeats.push_back(seat);
     }
 
@@ -101,15 +101,17 @@ bool SeatingPlan::canReserve(const std::vector<Seat>& seats) const {
 }
 
 void SeatingPlan::reserve(int count) {
-    if (!canReserve(count))
+    if (!canReserve(count)) {
         throw InvalidStateException("The requested number of tickets is not available.");
+    }
 
     soldCount += count;
 }
 
 void SeatingPlan::reserve(const std::vector<Seat>& seats) {
-    if (!canReserve(seats))
+    if (!canReserve(seats)) {
         throw InvalidStateException("At least one selected seat is invalid, occupied, or duplicated.");
+    }
 
     occupiedSeats.insert(occupiedSeats.end(), seats.begin(), seats.end());
     soldCount += static_cast<int>(seats.size());
@@ -124,29 +126,33 @@ void SeatingPlan::print(std::ostream& output) const {
     }
 
     output << "    ";
-    for (int column = 0; column < columns; ++column)
+    for (int column = 0; column < columns; ++column) {
         output << std::setw(4) << column + 1;
+    }
     output << '\n';
 
     for (int row = 0; row < rows; ++row) {
         output << static_cast<char>('A' + row) << "   ";
 
-        for (int column = 0; column < columns; ++column)
+        for (int column = 0; column < columns; ++column) {
             output << (contains({row, column}) ? "[X] " : "[ ] ");
+        }
 
         output << '\n';
     }
 }
 
 std::expected<Seat, std::string> SeatingPlan::parseSeat(const std::string& value) {
-    if (value.size() < 2 || !std::isalpha(static_cast<unsigned char>(value[0])))
+    if (value.size() < 2 || !std::isalpha(static_cast<unsigned char>(value[0]))) {
         return std::unexpected("Invalid seat: " + value);
+    }
 
     const int row = std::toupper(static_cast<unsigned char>(value[0])) - 'A';
     auto column = utils::toInt(value.substr(1));
 
-    if (!column || *column <= 0)
+    if (!column || *column <= 0) {
         return std::unexpected("Invalid seat: " + value);
+    }
 
     return Seat{row, *column - 1};
 }
@@ -159,8 +165,9 @@ std::string SeatingPlan::encodeSeats(const std::vector<Seat>& seats) {
     std::vector<std::string> values;
     values.reserve(seats.size());
 
-    for (const Seat& seat : seats)
+    for (const Seat& seat : seats) {
         values.push_back(seatToString(seat));
+    }
 
     return utils::join(values, ',');
 }
@@ -168,13 +175,11 @@ std::string SeatingPlan::encodeSeats(const std::vector<Seat>& seats) {
 std::vector<Seat> SeatingPlan::decodeSeats(const std::string& value) {
     std::vector<Seat> result;
 
-    if (value.empty()) 
-        return result;
+    if (value.empty()) return result;
 
     for (const std::string& part : utils::split(value, ',')) {
         auto seat = parseSeat(part);
-        if (seat) 
-            result.push_back(*seat);
+        if (seat) result.push_back(*seat);
     }
 
     return result;
