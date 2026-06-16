@@ -13,8 +13,7 @@ namespace {
         std::vector<std::string> values;
         values.reserve(ids.size());
 
-        for (int id : ids) 
-            values.push_back(std::to_string(id));
+        for (int id : ids) values.push_back(std::to_string(id));
         return utils::join(values, ',');
     }
 }
@@ -31,8 +30,9 @@ std::expected<void, std::string> StorageService::load(
 ) const {
     std::ifstream input(filePath);
 
-    if (!input.is_open())
+    if (!input.is_open()) {
         return {};
+    }
 
     users.clear();
     events.clear();
@@ -44,12 +44,12 @@ std::expected<void, std::string> StorageService::load(
 
     while (std::getline(input, line)) {
         ++lineNumber;
-        if (utils::trim(line).empty()) 
-            continue;
+        if (utils::trim(line).empty()) continue;
 
         auto result = loadRecord(utils::splitEscaped(line, '|'), users, events, requests, tickets, ids);
-        if (!result)
+        if (!result) {
             return std::unexpected("Line " + std::to_string(lineNumber) + ": " + result.error());
+        }
     }
 
     return {};
@@ -64,12 +64,14 @@ std::expected<void, std::string> StorageService::save(
 ) const {
     try {
         std::filesystem::path path(filePath);
-        if (path.has_parent_path())
+        if (path.has_parent_path()) {
             std::filesystem::create_directories(path.parent_path());
+        }
 
         std::ofstream output(filePath, std::ios::trunc);
-        if (!output.is_open())
+        if (!output.is_open()) {
             return std::unexpected("Cannot open storage file for writing.");
+        }
 
         output << utils::joinEscaped({
             "META",
@@ -92,8 +94,7 @@ std::expected<void, std::string> StorageService::save(
                     encodeIds(client->getHistoryEventIds()),
                     encodeIds(client->getCreatedEventIds())
                 }, '|') << '\n';
-            }
-            else if (const auto* admin = dynamic_cast<const Admin*>(user.get())) {
+            } else if (const auto* admin = dynamic_cast<const Admin*>(user.get())) {
                 output << utils::joinEscaped({
                     "USER", "ADMIN",
                     std::to_string(admin->getId()),
@@ -121,11 +122,13 @@ std::expected<void, std::string> StorageService::save(
             output << utils::joinEscaped(visitor.getRecord(), '|') << '\n';
         }
 
-        for (const auto& request : requests.all())
+        for (const auto& request : requests.all()) {
             output << utils::joinEscaped(request->toRecord(), '|') << '\n';
+        }
 
-        for (const Ticket& ticket : tickets.all())
+        for (const Ticket& ticket : tickets.all()) {
             output << utils::joinEscaped(ticket.toRecord(), '|') << '\n';
+        }
 
         return {};
     } catch (const std::exception& error) {
@@ -141,12 +144,10 @@ std::expected<void, std::string> StorageService::loadRecord(
     TicketRepository& tickets,
     IdState& ids
 ) const {
-    if (parts.empty()) 
-        return {};
+    if (parts.empty()) return {};
 
     if (parts[0] == "META") {
-        if (parts.size() != 6) 
-            return std::unexpected("Invalid metadata record.");
+        if (parts.size() != 6) return std::unexpected("Invalid metadata record.");
 
         auto userId = utils::toInt(parts[1]);
         auto eventId = utils::toInt(parts[2]);
@@ -154,8 +155,9 @@ std::expected<void, std::string> StorageService::loadRecord(
         auto requestId = utils::toInt(parts[4]);
         auto notificationId = utils::toInt(parts[5]);
 
-        if (!userId || !eventId || !ticketId || !requestId || !notificationId)
+        if (!userId || !eventId || !ticketId || !requestId || !notificationId) {
             return std::unexpected("Invalid metadata values.");
+        }
 
         ids = {*userId, *eventId, *ticketId, *requestId, *notificationId};
         return {};
@@ -163,24 +165,20 @@ std::expected<void, std::string> StorageService::loadRecord(
 
     if (parts[0] == "USER") {
         auto user = EntityFactory::userFromRecord(parts);
-        if (!user) 
-            return std::unexpected(user.error());
+        if (!user) return std::unexpected(user.error());
         users.add(std::move(*user));
         return {};
     }
 
     if (parts[0] == "NOTIFICATION") {
-        if (parts.size() != 6) 
-            return std::unexpected("Invalid notification record.");
+        if (parts.size() != 6) return std::unexpected("Invalid notification record.");
 
         auto userId = utils::toInt(parts[1]);
         auto id = utils::toInt(parts[2]);
-        if (!userId || !id) 
-            return std::unexpected("Invalid notification ids.");
+        if (!userId || !id) return std::unexpected("Invalid notification ids.");
 
         User* user = users.findById(*userId);
-        if (user == nullptr) 
-            return std::unexpected("Notification references an unknown user.");
+        if (user == nullptr) return std::unexpected("Notification references an unknown user.");
 
         user->addNotification(Notification(*id, parts[5], parts[3], parts[4] == "1"));
         return {};
@@ -188,24 +186,21 @@ std::expected<void, std::string> StorageService::loadRecord(
 
     if (parts[0] == "EVENT") {
         auto event = EntityFactory::eventFromRecord(parts);
-        if (!event) 
-            return std::unexpected(event.error());
+        if (!event) return std::unexpected(event.error());
         events.add(std::move(*event));
         return {};
     }
 
     if (parts[0] == "REQUEST") {
         auto request = EntityFactory::requestFromRecord(parts);
-        if (!request) 
-            return std::unexpected(request.error());
+        if (!request) return std::unexpected(request.error());
         requests.add(std::move(*request));
         return {};
     }
 
     if (parts[0] == "TICKET") {
         auto ticket = EntityFactory::ticketFromRecord(parts);
-        if (!ticket) 
-            return std::unexpected(ticket.error());
+        if (!ticket) return std::unexpected(ticket.error());
         tickets.add(std::move(*ticket));
         return {};
     }
