@@ -1,4 +1,4 @@
-// This code was generated with AI assistance
+# This code was generated with AI assistance
 
 CXX ?= g++
 
