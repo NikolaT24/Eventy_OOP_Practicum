@@ -175,6 +175,8 @@ bool utils::isUpcomingDate(const std::string& value) {
     return isValidDate(value) && value >= todayText();
 }
 
+// This date/time formatting code was generated with AI assistance
+
 std::string utils::todayText() {
     const auto now = std::chrono::system_clock::now();
     const std::time_t time = std::chrono::system_clock::to_time_t(now);
