@@ -1,3 +1,5 @@
+// This code was generated with AI assistance
+
 CXX ?= g++
 
 TARGET := eventy
