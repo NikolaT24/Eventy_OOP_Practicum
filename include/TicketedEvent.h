@@ -1,34 +1,29 @@
 #pragma once
 
+#include <memory>
+#include <vector>
 #include "Event.h"
 #include "SeatingPlan.h"
-#include <vector>
 
-class TicketedEvent : public Event {
+class TicketedEvent final : public Event {
 private:
     double ticketPrice;
     SeatingPlan seatingPlan;
 
 public:
-    TicketedEvent(int id,
-                  const std::string& title,
-                  const std::string& date,
-                  const std::string& address,
-                  int creatorId,
-                  double ticketPrice,
-                  const SeatingPlan& seatingPlan,
-                  EventStatus status = EventStatus::Pending);
-
-    EventType getType() const override;
+    TicketedEvent(int id, std::string title, std::string date, std::string address,
+                  int creatorId, double ticketPrice, SeatingPlan seatingPlan,
+                  EventStatus status = EventStatus::Pending,
+                  std::string cancellationReason = "");
 
     double getTicketPrice() const;
     const SeatingPlan& getSeatingPlan() const;
     SeatingPlan& getSeatingPlan();
 
     double priceFor(int count) const;
-    bool reserveGeneral(int count);
-    bool reserveSeats(const std::vector<Seat>& seats);
+    void reserveGeneral(int count);
+    void reserveSeats(const std::vector<Seat>& seats);
 
-    void printInfo() const override;
-    std::vector<std::string> toRecord() const override;
+    void accept(EventVisitor& visitor) const override;
+    std::unique_ptr<Event> clone() const override;
 };
